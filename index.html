@@ -63,6 +63,10 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
 <script>
 /* ===== 記事一覧：記事を追加したら、ここに1件書き足す ===== */
 var ARTICLES = [
+  { cat: "lectures", file: "lectures/20261124_生成AIを正しく使うために.html",
+    title: "生成AIを正しく使うために　仕組み・使い方・安全",
+    desc: "デジタル化の4段階、LLMとハルシネーション、AIは計算していない、よい出力の5段階、RAG、情報の棚卸しとリスク、安全に使う10の行動、AIエージェントとトレンド、AXへの4ステップ（スライド形式）",
+    date: "2026-11-24" },
   { cat: "basics", file: "basics/20261120_データベースの基礎知識.html",
     title: "データベースの基礎知識　表・種類・CRUD",
     desc: "DBとは、テーブル・ロー・カラム、マスタとトランザクション、CRUD、RDBとNoSQL、トランザクション処理、AI活用との関係（スライド形式）",
@@ -82,6 +86,7 @@ var ARTICLES = [
 ];
 
 var CATS = [
+  { id: "lectures",  name: "講義資料",       desc: "講座で使うスライド・講義資料" },
   { id: "basics",    name: "基礎",           desc: "AIの仕組み・用語・安全な使い方" },
   { id: "prompting", name: "問いかけ方",     desc: "AIへの指示の出し方" },
   { id: "tools",     name: "ツール",         desc: "ツール・サービスの使い方" },
