@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Deep Dive 第2回 学習会｜AX教育ユニット-AX Enablement Team-</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Inter:wght@400;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#FFFFFF; --bg-tint:#F4F8FC; --surface:#FFFFFF; --ink:#2D3436; --ink-soft:#4A5560; --muted:#636E72;
+  --head:#0A1B3A; --blue:#1E4D8C; --cyan:#0099CC; --cyan-text:#00739A; --callout:#E6F5FD;
+  --rule:#D0D5D4; --zebra:#F0F2F5; --ok:#00805F; --ng:#B3261E; --bar:#0A1B3A; --bar-ink:#FFFFFF; --bar-soft:#9FB3CF;
+  --stage-dark:#0A1B3A; --focus:#0099CC;
+  --c1:#6B4FB3; --c1-soft:#EFEAFA; --c2:#C8552E; --c2-soft:#FBEDE6; --c3:#0E8584; --c3-soft:#E2F4F3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0E1626; --bg-tint:#121D31; --surface:#16223A; --ink:#E3E8EF; --ink-soft:#C2CBD6; --muted:#9AA6B4;
+    --head:#F2F5F9; --blue:#8DB4E8; --cyan:#4CC3E8; --cyan-text:#6FD0EE; --callout:#16304A;
+    --rule:#2C3A52; --zebra:#152036; --ok:#4CD1A8; --ng:#F08A80; --bar:#060E1E; --bar-ink:#FFFFFF; --bar-soft:#8FA3BF;
+    --stage-dark:#060E1E; --focus:#4CC3E8;
+    --c1:#B29CF0; --c1-soft:#2A2344; --c2:#EE9A73; --c2-soft:#3A2820; --c3:#5FCFCB; --c3-soft:#173634;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0E1626; --bg-tint:#121D31; --surface:#16223A; --ink:#E3E8EF; --ink-soft:#C2CBD6; --muted:#9AA6B4;
+  --head:#F2F5F9; --blue:#8DB4E8; --cyan:#4CC3E8; --cyan-text:#6FD0EE; --callout:#16304A;
+  --rule:#2C3A52; --zebra:#152036; --ok:#4CD1A8; --ng:#F08A80; --bar:#060E1E; --bar-ink:#FFFFFF; --bar-soft:#8FA3BF;
+  --stage-dark:#060E1E; --focus:#4CC3E8;
+  --c1:#B29CF0; --c1-soft:#2A2344; --c2:#EE9A73; --c2-soft:#3A2820; --c3:#5FCFCB; --c3-soft:#173634;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ height:100%; }
+body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans JP","Yu Gothic","Meiryo",system-ui,sans-serif; letter-spacing:.02em; line-height:1.7;
+  font-size:clamp(16px,1.4vw,22px); display:flex; flex-direction:column; word-break:auto-phrase; }
+.num,.clock,.tnum,.big-num{ font-family:"Inter","Noto Sans JP",system-ui,sans-serif; font-feature-settings:"tnum"; }
+button,input,textarea{ font:inherit; color:inherit; }
+:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+h1,h2,h3{ margin:0; color:var(--head); line-height:1.35; text-wrap:balance; }
+p,li,td{ text-wrap:pretty; }
+h2{ font-size:1.85em; font-weight:700; padding-bottom:.4em; border-bottom:3px solid var(--head); }
+h3{ font-size:1.1em; }
+p{ margin:0; }
+
+/* ---------- session bar ---------- */
+.bar{ background:var(--bar); color:var(--bar-ink); display:flex; align-items:center; gap:1.2em; padding:.6em 1.4em; flex:none; flex-wrap:wrap; }
+.bar .title{ font-weight:700; font-size:.8em; white-space:nowrap; }
+.track{ flex:1; min-width:240px; display:flex; gap:4px; height:2.2em; }
+.seg{ position:relative; flex:1 1 auto; min-width:0; border:0; border-radius:2px; background:rgba(255,255,255,.1); color:var(--bar-soft); font-size:.66em; cursor:pointer; overflow:hidden; padding:0 .8em; text-align:center; white-space:nowrap; text-overflow:ellipsis; }
+.seg .fill{ position:absolute; inset:0 auto 0 0; width:0; background:rgba(0,153,204,.35); transition:width .3s linear; }
+.seg span{ position:relative; }
+.seg.now{ color:#FFFFFF; background:rgba(255,255,255,.18); box-shadow:inset 0 -3px 0 #0099CC; }
+.seg.done{ color:#FFFFFF; }
+.seg.done .fill{ width:100%; background:rgba(0,153,204,.22); }
+.timer{ display:flex; align-items:center; gap:.5em; }
+.clock{ font-size:1.25em; font-weight:700; min-width:3.6em; text-align:right; }
+.clock.over{ color:#FFB4A9; }
+.tbtn{ background:transparent; border:1px solid rgba(255,255,255,.35); color:#FFFFFF; border-radius:999px; padding:.15em .9em; font-size:.72em; cursor:pointer; }
+.tbtn:hover{ background:rgba(255,255,255,.12); }
+.tbtn[aria-pressed="true"]{ background:#FFFFFF; color:#0A1B3A; }
+
+/* ---------- stage ---------- */
+.stage{ flex:1; position:relative; overflow:hidden; }
+.slide{ position:absolute; inset:0; overflow:auto; padding:clamp(22px,4.5vh,56px) clamp(20px,6vw,96px) 1.6em; display:none; flex-direction:column; background:var(--bg); }
+.slide.on{ display:flex; animation:in .35s ease-out; }
+@keyframes in{ from{ opacity:0; transform:translateY(8px); } }
+.slide.tint{ background:var(--bg-tint); }
+.inner{ width:100%; max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:1.2em; flex:1; }
+.part{ font-size:.75em; font-weight:700; color:var(--blue); margin:0; display:flex; gap:.6em; align-items:center; flex-wrap:wrap; }
+.part .tag{ display:inline-block; font-size:.9em; padding:.05em .7em; border-radius:999px; color:#FFFFFF; background:var(--blue); }
+.part .tag.c1{ background:var(--c1); } .part .tag.c2{ background:var(--c2); } .part .tag.c3{ background:var(--c3); }
+.lede{ color:var(--ink-soft); }
+.muted{ color:var(--muted); font-size:.8em; }
+.msg{ font-weight:700; color:var(--head); font-size:1.12em; border-left:6px solid var(--cyan); padding:.3em 0 .3em .8em; }
+.src{ color:var(--muted); font-size:.68em; }
+.src a{ color:var(--cyan-text); word-break:break-all; }
+#u-data .inner{ gap:.9em; }
+#u-data .big-num{ font-size:clamp(34px,4.2vw,62px); }
+#u-data .stat{ padding:.6em 1.2em; }
+.hyp{ display:inline-block; font-size:.66em; font-weight:700; color:var(--c2); border:1px solid var(--c2); border-radius:999px; padding:0 .6em; }
+.g2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1em; }
+.g3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+.card{ background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:1em 1.2em; display:flex; flex-direction:column; gap:.35em; }
+.card p{ font-size:.9em; }
+
+/* notes */
+.note{ display:none; margin-top:auto; background:#FFF8D6; color:#4A3B00; border-radius:6px; padding:.6em 1em; font-size:.8em; }
+.note::before{ content:"発表者メモ　"; font-weight:700; }
+body.notes .note{ display:block; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .note{ background:#3A3416; color:#F3E7A6; } }
+
+/* cover */
+.cover{ background:linear-gradient(160deg,#0A1B3A 0%,#11264D 55%,#1E4D8C 100%); color:#FFFFFF; }
+.cover .inner{ justify-content:center; }
+.cover h1{ color:#FFFFFF; font-size:clamp(30px,4.4vw,64px); font-weight:900; line-height:1.3; }
+.cover h1 .q{ color:#66C7E5; }
+.cover .sub{ color:#CCECFF; font-size:1.05em; }
+.cover .part{ color:#66C7E5; }
+.cover .meta{ color:#FFFFFF; display:flex; gap:2em; flex-wrap:wrap; font-size:.9em; margin-top:1em; }
+.cover .muted{ color:#CCECFF; }
+.cover .msg{ color:#FFFFFF; border-color:#66C7E5; }
+.start{ align-self:flex-start; margin-top:.6em; background:#FFFFFF; color:#0A1B3A; border:0; border-radius:8px; padding:.6em 1.6em; font-weight:700; cursor:pointer; }
+
+/* timetable */
+.tt{ display:flex; flex-direction:column; }
+.tt button{ display:grid; grid-template-columns:7.5em 1fr auto; gap:1em; align-items:center; text-align:left; background:transparent; border:0; border-top:1px solid var(--rule); padding:.8em .6em; cursor:pointer; color:var(--ink); }
+.tt button:last-child{ border-bottom:1px solid var(--rule); }
+.tt button:hover{ background:var(--zebra); }
+.tt .time{ font-weight:700; color:var(--cyan-text); }
+.tt .what b{ display:block; color:var(--head); font-size:1.05em; }
+.tt .what span{ font-size:.82em; color:var(--muted); }
+.tt .go{ font-size:.75em; color:var(--blue); font-weight:700; }
+
+/* section divider */
+.divider .inner{ justify-content:center; }
+.divider .kicker{ font-weight:700; letter-spacing:.06em; color:var(--cyan-text); }
+.divider h1{ font-size:clamp(28px,3.8vw,56px); font-weight:900; }
+.divider .themes{ display:flex; gap:.6em; flex-wrap:wrap; }
+.divider .themes span{ padding:.3em 1em; border-radius:999px; font-weight:700; font-size:.85em; }
+
+/* scattered words */
+.scatter{ position:relative; height:13em; border:1px dashed var(--rule); border-radius:8px; }
+.scatter span{ position:absolute; font-weight:900; color:var(--head); font-size:1.3em; transition:all .6s ease; }
+
+/* nested circles */
+.nest-wrap{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:1.4em; align-items:center; }
+.nest svg{ width:100%; height:auto; max-height:44vh; display:block; margin:0 auto; }
+.nest text{ font-family:"Noto Sans JP",sans-serif; }
+.legend-list{ display:flex; flex-direction:column; gap:.45em; }
+.legend-list div{ display:grid; grid-template-columns:1.1em 1fr; gap:.6em; align-items:start; font-size:.85em; }
+.legend-list i{ width:1em; height:1em; border-radius:50%; margin-top:.35em; display:block; }
+.legend-list b{ color:var(--head); }
+.legend-list small{ color:var(--muted); display:block; }
+
+/* evolution */
+.evo{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.4em; align-items:stretch; }
+.evo .card{ border-top:4px solid var(--c1); }
+.evo .card .who{ font-size:.75em; font-weight:700; color:var(--c1); }
+.evo .card .eg{ font-size:.8em; color:var(--muted); }
+
+/* next word */
+.nw-wrap{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.4em; align-items:center; }
+.prompt-line{ font-size:1.4em; font-weight:900; color:var(--head); }
+.bars{ display:flex; flex-direction:column; gap:.5em; }
+.barrow{ display:grid; grid-template-columns:3.5em 1fr 3em; gap:.6em; align-items:center; }
+.barrow .b{ height:1.4em; background:var(--zebra); border-radius:3px; overflow:hidden; }
+.barrow .b i{ display:block; height:100%; width:0; background:var(--c1); transition:width .8s ease; }
+.barrow:first-child .b i{ background:var(--c1); }
+.barrow:not(:first-child) .b i{ opacity:.45; }
+.barrow .pct{ text-align:right; font-weight:700; }
+
+/* learning */
+.learn{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+.learn .card{ border-top:4px solid var(--c2); align-items:flex-start; }
+.learn svg{ width:100%; height:5.5em; }
+.learn .eg{ font-size:.8em; color:var(--muted); }
+.quiz{ background:var(--c2-soft); border-radius:8px; padding:.9em 1.2em; display:flex; flex-direction:column; gap:.6em; }
+.quiz .q{ font-weight:700; color:var(--head); }
+.choices{ display:flex; gap:.6em; flex-wrap:wrap; }
+.choices button{ background:var(--surface); border:1px solid var(--rule); border-radius:999px; padding:.25em 1.1em; cursor:pointer; }
+.choices button:hover{ border-color:var(--c2); }
+.choices button.ok{ background:var(--ok); color:#FFFFFF; border-color:var(--ok); }
+.choices button.ng{ background:var(--surface); color:var(--ng); border-color:var(--ng); }
+.qres{ font-size:.85em; min-height:1.5em; }
+
+/* stairs */
+.stairs{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6em; align-items:end; }
+.step{ background:var(--c2-soft); border-radius:6px 6px 0 0; padding:.8em 1em; display:flex; flex-direction:column; gap:.25em; border-top:4px solid var(--c2); }
+.step:nth-child(1){ min-height:9em; } .step:nth-child(2){ min-height:12em; } .step:nth-child(3){ min-height:15em; }
+.step .n{ font-weight:700; color:var(--c2); font-size:.8em; }
+.step .become{ margin-top:auto; font-weight:700; color:var(--head); }
+
+/* RAG */
+.ab{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1em; }
+.ab .card.pick{ border:2px solid var(--c3); background:var(--c3-soft); }
+.ab .card .lbl{ font-weight:900; font-size:1.3em; color:var(--muted); }
+.ab .card.pick .lbl{ color:var(--c3); }
+.flow{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.5em; }
+.flow div{ position:relative; border-radius:6px; padding:.7em .8em; font-size:.82em; display:flex; flex-direction:column; gap:.2em; }
+.flow div b{ font-size:.85em; }
+.flow .r{ background:var(--c3-soft); border-top:4px solid var(--c3); }
+.flow .g{ background:var(--c1-soft); border-top:4px solid var(--c1); }
+.flow div:not(:last-child)::after{ content:"▶"; position:absolute; right:-.62em; top:50%; transform:translateY(-50%); color:var(--muted); font-size:.75em; z-index:1; }
+.flow-legend{ display:flex; gap:1.2em; font-size:.75em; color:var(--muted); }
+.flow-legend span::before{ content:""; display:inline-block; width:.8em; height:.8em; border-radius:2px; margin-right:.4em; vertical-align:middle; }
+.flow-legend .r::before{ background:var(--c3); } .flow-legend .g::before{ background:var(--c1); }
+.ask{ text-align:center; font-size:clamp(22px,2.6vw,38px); font-weight:900; color:var(--head); line-height:1.5; padding:.4em 0; }
+
+/* unit part */
+.qs{ display:flex; flex-direction:column; gap:.6em; }
+.qs div{ font-size:1.15em; font-weight:700; color:var(--head); padding:.6em 1em; background:var(--surface); border:1px solid var(--rule); border-radius:6px; }
+.qs div::before{ content:"Q. "; color:var(--cyan-text); }
+.stats{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1em; }
+.stat{ background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:.8em 1.2em; }
+.big-num{ font-size:clamp(40px,5.2vw,78px); font-weight:700; color:var(--head); line-height:1.1; }
+.big-num small{ font-size:.45em; }
+.stat p{ color:var(--muted); font-size:.85em; }
+.issues{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1em; }
+.issues .card h3{ font-size:.9em; color:var(--cyan-text); }
+.issues ul{ margin:0; padding-left:1.2em; font-size:.85em; }
+.meta-wrap{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:1em; align-items:stretch; }
+.person{ background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:1em; display:flex; flex-direction:column; gap:.3em; }
+.person .who{ font-weight:900; color:var(--head); }
+.person.b{ border:2px solid var(--cyan); }
+.gap{ display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:0 .4em; }
+.gap .big-num{ color:var(--cyan-text); }
+.gap span{ font-size:.75em; color:var(--muted); }
+.skills{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.5em; }
+.skills div{ background:var(--callout); border-radius:6px; padding:.5em .6em; text-align:center; }
+.skills b{ display:block; color:var(--head); font-size:1.05em; }
+.skills span{ font-size:.72em; color:var(--ink-soft); }
+.vs{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); border:1px solid var(--rule); border-radius:6px; overflow:hidden; }
+.vs .h{ font-weight:700; font-size:.8em; padding:.45em 1em; }
+.vs .h.w{ background:var(--head); color:var(--bg); }
+.vs .h.l{ background:var(--zebra); color:var(--muted); }
+.vs .w,.vs .l{ padding:.22em 1em; font-size:.82em; line-height:1.55; border-top:1px solid var(--rule); }
+.vs .w{ font-weight:700; color:var(--head); background:var(--callout); }
+.vs .l{ color:var(--muted); }
+.side{ display:flex; flex-direction:column; gap:.6em; }
+.side .card{ padding:.6em 1em; gap:.2em; }
+.side .card p{ font-size:.82em; }
+.side .card h3{ font-size:.85em; color:var(--cyan-text); }
+.chips{ display:flex; gap:.4em; flex-wrap:wrap; }
+.chips span{ background:var(--callout); color:var(--head); font-weight:700; border-radius:999px; padding:.1em .8em; font-size:.85em; }
+.two{ display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:1.2em; align-items:start; }
+.wheel-wrap{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2em; align-items:center; }
+.wheel svg{ width:100%; height:auto; max-height:42vh; display:block; margin:0 auto; }
+.wheel text{ font-family:"Noto Sans JP",sans-serif; }
+.wheel .node{ cursor:pointer; }
+.wheel .node circle{ fill:var(--surface); stroke:var(--cyan); stroke-width:2; transition:fill .2s; }
+.wheel .node.on circle{ fill:var(--cyan); }
+.wheel .node text{ fill:var(--head); font-weight:700; }
+.wheel .node.on text{ fill:#FFFFFF; }
+.ability{ background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:1em 1.2em; display:flex; flex-direction:column; gap:.4em; min-height:8em; }
+.ability .n{ color:var(--cyan-text); font-weight:700; font-size:.8em; }
+.tri svg{ width:100%; height:auto; max-height:34vh; display:block; margin:0 auto; }
+.tri text{ font-family:"Noto Sans JP",sans-serif; }
+.exp{ display:flex; flex-direction:column; gap:.5em; }
+.exp .card{ padding:.45em 1em; }
+.exp .card b{ color:var(--head); }
+.exp .card span{ font-size:.8em; color:var(--muted); display:block; }
+.facts{ margin:0; padding-left:1.2em; font-size:.85em; }
+.facts li{ margin:.2em 0; }
+.shift{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:1em; align-items:stretch; }
+.shift .card.old{ background:var(--zebra); }
+.shift .card.old li{ color:var(--muted); }
+.shift .card.new{ border:2px solid var(--cyan); }
+.shift ul{ margin:0; padding-left:1.2em; font-size:.9em; }
+.shift .arrow{ align-self:center; font-size:1.6em; color:var(--cyan); }
+.nw{ white-space:nowrap; }
+.cycle{ display:flex; align-items:center; justify-content:center; gap:.4em; flex-wrap:wrap; font-weight:700; }
+.cycle span{ background:var(--head); color:var(--bg); border-radius:999px; padding:.2em 1em; }
+.cycle i{ color:var(--cyan); font-style:normal; }
+.discuss{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+.discuss .card{ border-top:4px solid var(--cyan); }
+.discuss .card .n{ color:var(--cyan-text); font-weight:700; font-size:.8em; }
+.discuss .card h3{ font-size:1.05em; }
+.discuss .card p{ color:var(--muted); }
+.final{ background:var(--stage-dark); color:#FFFFFF; }
+.final .inner{ justify-content:center; text-align:center; align-items:center; }
+.final .big{ color:#FFFFFF; font-size:clamp(26px,3.4vw,52px); font-weight:900; line-height:1.5; }
+.final p{ color:#CCECFF; max-width:40em; }
+.final .part{ color:#66C7E5; justify-content:center; }
+
+/* next */
+.todo{ display:flex; flex-direction:column; gap:.6em; }
+.todo label{ display:grid; grid-template-columns:auto 1fr; gap:.7em; align-items:start; background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:.7em 1em; }
+.todo input[type=checkbox]{ width:1.1em; height:1.1em; margin-top:.35em; accent-color:var(--cyan); }
+.fieldbox{ display:flex; flex-direction:column; gap:.3em; }
+.fieldbox label{ font-weight:700; color:var(--head); }
+.fieldbox textarea{ width:100%; min-height:5em; resize:vertical; background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:.5em .8em; line-height:1.6; }
+
+/* nav */
+.nav{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:1em; padding:.5em 1.4em; border-top:1px solid var(--rule); background:var(--bg); font-size:.8em; }
+.nav .pg{ color:var(--muted); }
+.nav .nb{ background:transparent; border:1px solid var(--rule); border-radius:999px; padding:.25em 1.1em; cursor:pointer; color:var(--ink); }
+.nav .nb:hover{ border-color:var(--blue); }
+.nav .nb:disabled{ opacity:.35; cursor:default; }
+
+/* management detail */
+.mg3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6em; }
+.mg3 div{ border-radius:6px; padding:.5em .9em; background:var(--callout); }
+.mg3 div.on{ background:var(--head); }
+.mg3 div.on b,.mg3 div.on span{ color:var(--bg); }
+.mg3 b{ display:block; color:var(--head); }
+.mg3 span{ font-size:.75em; color:var(--ink-soft); }
+.ba{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1.4fr); gap:.8em; align-items:stretch; }
+.ba .card.before{ background:var(--zebra); }
+.ba .card.before p{ color:var(--muted); }
+.ba .card.after{ border:2px solid var(--cyan); }
+.ba .lbl{ font-size:.72em; font-weight:700; letter-spacing:.04em; color:var(--muted); }
+.ba .card.after .lbl{ color:var(--cyan-text); }
+.ba .arrow{ align-self:center; font-size:1.4em; color:var(--cyan); }
+.checks{ margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.3em 1.2em; font-size:.88em; }
+.checks li::before{ content:"✓ "; color:var(--cyan-text); font-weight:700; }
+.rule{ width:100%; border-collapse:collapse; font-size:.82em; }
+.rule th{ text-align:left; background:var(--head); color:var(--bg); padding:.35em .8em; font-weight:700; }
+.rule td{ padding:.3em .8em; border-bottom:1px solid var(--rule); }
+.rule td:first-child{ font-weight:700; color:var(--head); white-space:nowrap; }
+.rule tr.human td:last-child{ color:var(--c2); font-weight:700; }
+.refl{ margin:0; padding-left:1.3em; font-size:.85em; display:flex; flex-direction:column; gap:.15em; }
+.refl li::marker{ color:var(--cyan-text); font-weight:700; }
+.half{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2em; align-items:start; }
+.half > div{ display:flex; flex-direction:column; gap:.6em; }
+.half h3{ font-size:1em; color:var(--cyan-text); }
+.pct2{ display:flex; flex-direction:column; gap:.35em; }
+.pct2 .barrow{ grid-template-columns:7.5em 1fr 3.6em; }
+.pct2 .barrow .b i{ background:var(--cyan); opacity:1; }
+#u-mgmt1 .inner,#u-mgmt2 .inner,#u-change .inner{ gap:.85em; }
+#u-mgmt1 .lede{ font-size:.9em; }
+.pm{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.5em; }
+.pm .card{ padding:.55em .9em; gap:.15em; }
+.pm .card b{ font-size:.85em; }
+.pm .card p{ font-size:.8em; }
+.pm .plus{ border-top:3px solid var(--ok); } .pm .minus{ border-top:3px solid var(--c2); }
+.wo{ display:grid; grid-template-columns:6.4em minmax(0,1fr) minmax(0,1fr); border:1px solid var(--rule); border-radius:6px; overflow:hidden; font-size:.82em; }
+.wo div{ padding:.3em .8em; border-top:1px solid var(--rule); }
+.wo .hd{ border-top:0; font-weight:700; }
+.wo .k{ color:var(--muted); font-weight:700; }
+.wo .o{ color:var(--muted); background:var(--zebra); }
+.wo .n{ color:var(--head); font-weight:700; background:var(--callout); }
+@media (max-width: 860px){ .mg3,.ba,.checks,.half,.pm{ grid-template-columns:minmax(0,1fr); } .wo{ grid-template-columns:4.5em 1fr 1fr; } }
+
+/* issues from workplace change */
+.probs{ display:flex; flex-direction:column; gap:.55em; }
+.prob{ display:grid; grid-template-columns:2.2em 1fr; gap:.2em .8em; background:var(--surface); border:1px solid var(--rule); border-left:5px solid var(--c2); border-radius:6px; padding:.55em .9em; }
+.prob .n{ grid-row:span 2; font-family:"Inter",sans-serif; font-weight:700; font-size:1.4em; color:var(--c2); line-height:1.2; }
+.prob b{ color:var(--head); }
+.prob p{ font-size:.8em; color:var(--ink-soft); }
+.askbox{ background:var(--head); color:var(--bg); border-radius:8px; padding:.9em 1.2em; display:flex; flex-direction:column; gap:.5em; }
+.askbox h3{ color:var(--bg); font-size:1em; }
+.askbox ol{ margin:0; padding-left:1.3em; display:flex; flex-direction:column; gap:.45em; font-size:.88em; }
+.askbox li::marker{ color:#66C7E5; font-weight:700; }
+
+.nav{ justify-content:flex-start; }
+.nav #prev{ margin-left:auto; }
+@media (max-width: 1100px){ .bar .title{ display:none; } }
+@media (max-width: 860px){
+  .g2,.g3,.nest-wrap,.nw-wrap,.learn,.stairs,.ab,.flow,.stats,.issues,.meta-wrap,.skills,.two,.wheel-wrap,.shift,.discuss,.evo{ grid-template-columns:minmax(0,1fr); }
+  .flow div::after{ display:none; }
+  h2{ font-size:1.45em; }
+  .tt button{ grid-template-columns:1fr; gap:.2em; }
+}
+@media (prefers-reduced-motion: reduce){ .slide.on{ animation:none; } .seg .fill,.barrow .b i,.scatter span{ transition:none; } }
+</style>
+</head>
+<body>
+
+<header class="bar" aria-label="セッションの進行">
+  <div class="title">AI Deep Dive｜第2回 学習会</div>
+  <div class="track" id="track" role="list"></div>
+  <div class="timer">
+    <span class="clock" id="clock">--:--</span>
+    <button class="tbtn" id="tStart" type="button">開始</button>
+    <button class="tbtn" id="tReset" type="button">リセット</button>
+    <button class="tbtn" id="tNotes" type="button" aria-pressed="false" title="発表者メモの表示（Nキー）">メモ</button>
+  </div>
+</header>
+
+<main class="stage" id="stage">
+
+  <!-- ================= intro ================= -->
+  <section class="slide cover" id="cover" data-part="intro" aria-label="表紙">
+    <div class="inner">
+      <p class="part">AX教育ユニット-AX Enablement Team-｜AI Deep Dive</p>
+      <h1>第2回 学習会</h1>
+      <p class="sub">AIのしくみを知り、AIで成果を生み出す人と組織を考える。</p>
+      <div class="meta"><span>2026年11月27日 10:00〜</span></div>
+      <button class="start" type="button" data-go="timetable">はじめる</button>
+    </div>
+  </section>
+
+  <section class="slide" id="timetable" data-part="intro" aria-label="タイムテーブル">
+    <div class="inner">
+      <p class="part">タイムテーブル</p>
+      <h2>今日の流れ</h2>
+      <div class="tt">
+        <button type="button" data-go="c-cover"><span class="time tnum">10:15–10:30</span><span class="what"><b>AI講座パート：AIのしくみ超入門</b><span>AI技術の全体構造・AIの学び方・RAG（30分版を15分に凝縮）</span></span><span class="go">移動 ▶</span></button>
+        <button type="button" data-go="u-cover"><span class="time tnum">10:30–10:45</span><span class="what"><b>AI教育ユニットの学習パート：AIで成果を生み出す企業と人材とは？</b><span>調査データから、私たちが何を育てるべきかを考える</span></span><span class="go">移動 ▶</span></button>
+        <button type="button" data-go="next"><span class="time tnum">10:45–</span><span class="what"><b>次週に向けて</b><span>今日の問いを持ち帰り、次回の準備をそろえる</span></span><span class="go">移動 ▶</span></button>
+      </div>
+      <p class="muted">上部のバーで、パートごとの残り時間を管理できます。「メモ」で発表者メモを表示します。</p>
+    </div>
+  </section>
+
+  <!-- ================= AI講座パート ================= -->
+  <section class="slide divider" id="c-cover" data-part="course" aria-label="AIのしくみ超入門">
+    <div class="inner">
+      <p class="kicker tnum">10:15–10:30｜AI講座パート</p>
+      <h1>AIのしくみ超入門</h1>
+      <p class="lede">なんとなく使う、から、仕組みを知って使いこなす、へ。</p>
+      <div class="themes">
+        <span style="background:var(--c1-soft);color:var(--c1)">第1章 AI技術の全体構造</span>
+        <span style="background:var(--c2-soft);color:var(--c2)">第2章 AIの学び方</span>
+        <span style="background:var(--c3-soft);color:var(--c3)">第3章 RAG</span>
+      </div>
+      <p class="note">30分版の講座を15分に凝縮したダイジェスト。デモとQ&Aは省き、問い→図解→まとめの流れを体験してもらう。受講者目線で「自分が教えるならどう話すか」も考えながら聞いてもらう。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-q" data-part="course" aria-label="最初の問い">
+    <div class="inner">
+      <p class="part"><span class="tag c1">第1章</span>最初の問い</p>
+      <h2>「AI」「機械学習」「ディープラーニング」「生成AI」。違いを説明できますか？</h2>
+      <div class="scatter" id="scatter" aria-hidden="true">
+        <span style="left:6%;top:12%">AI</span>
+        <span style="left:58%;top:8%">機械学習</span>
+        <span style="left:20%;top:58%">ディープラーニング</span>
+        <span style="left:66%;top:62%">生成AI</span>
+      </div>
+      <div class="row" style="display:flex;gap:.6em;flex-wrap:wrap;align-items:center">
+        <button class="start" style="background:var(--head);color:var(--bg);margin:0" type="button" id="toNest">答えを見る ▶</button>
+        <span class="muted">ChatGPTは「AI」？ それとも「機械学習」？</span>
+      </div>
+      <p class="note">チャットで「説明できる／なんとなく／できない」を答えてもらう。多くの人が「なんとなく」と答える想定。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-nest" data-part="course" aria-label="AI技術の全体構造">
+    <div class="inner">
+      <p class="part"><span class="tag c1">第1章</span>AI技術の全体構造</p>
+      <h2>AI ⊃ 機械学習 ⊃ ディープラーニング ⊃ 生成AI</h2>
+      <div class="nest-wrap">
+        <div class="nest">
+          <svg viewBox="0 0 400 300" role="img" aria-label="AI、機械学習、ディープラーニング、生成AIが外側から順に入れ子になった図">
+            <ellipse cx="200" cy="150" rx="195" ry="145" fill="var(--c1)" fill-opacity=".10" stroke="var(--c1)" stroke-opacity=".5"/>
+            <ellipse cx="200" cy="172" rx="150" ry="118" fill="var(--c1)" fill-opacity=".16" stroke="var(--c1)" stroke-opacity=".6"/>
+            <ellipse cx="200" cy="194" rx="105" ry="90" fill="var(--c1)" fill-opacity=".26" stroke="var(--c1)" stroke-opacity=".7"/>
+            <ellipse cx="200" cy="216" rx="62" ry="58" fill="var(--c1)" fill-opacity=".85"/>
+            <text x="200" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="var(--head)">人工知能（AI）</text>
+            <text x="200" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="var(--head)">機械学習</text>
+            <text x="200" y="128" text-anchor="middle" font-size="14" font-weight="700" fill="var(--head)">ディープラーニング</text>
+            <text x="200" y="214" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">生成AI</text>
+            <text x="200" y="234" text-anchor="middle" font-size="10" fill="#FFFFFF">ChatGPT・Claude</text>
+          </svg>
+        </div>
+        <div class="legend-list">
+          <div><i style="background:var(--c1);opacity:.25"></i><span><b>人工知能（AI）</b>　1950年代〜<small>人の知的な働きをコンピュータで実現する技術の総称。例：ルールベースの診断、将棋ソフト</small></span></div>
+          <div><i style="background:var(--c1);opacity:.4"></i><span><b>機械学習</b>　1980〜90年代〜<small>データからルールを自動で学ぶ。例：迷惑メール判定、需要予測</small></span></div>
+          <div><i style="background:var(--c1);opacity:.6"></i><span><b>ディープラーニング</b>　2010年代〜<small>多層のニューラルネットで、特徴まで自分で見つける。例：画像認識、音声認識</small></span></div>
+          <div><i style="background:var(--c1)"></i><span><b>生成AI</b>　2020年代〜<small>学んだパターンから、新しい文章・画像を作り出す</small></span></div>
+        </div>
+      </div>
+      <p class="msg">生成AIは、AIという大きな箱の一番内側にある最新の技術。</p>
+      <p class="note">「ChatGPTはAIでもあり、機械学習でもあり、ディープラーニングでもある」と入れ子の関係を言葉で確認する。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-evo" data-part="course" aria-label="教えるAIから学ぶAIへ">
+    <div class="inner">
+      <p class="part"><span class="tag c1">第1章</span>ルール → 学習 → 特徴の発見</p>
+      <h2>AIは「教わる」から「自分で見つける」へ進化した</h2>
+      <div class="evo">
+        <div class="card"><span class="who">従来のAI（ルールベース）</span><h3>ルールを人が書く</h3><p>「“当選”を含むなら迷惑メール」と人が決める</p><p class="eg">弱み：想定外のケースに弱い</p></div>
+        <div class="card"><span class="who">機械学習</span><h3>ルールをデータから学ぶ</h3><p>大量のメールと判定結果から、AIがパターンを学ぶ</p><p class="eg">弱み：質の良いデータが大量に必要</p></div>
+        <div class="card"><span class="who">ディープラーニング</span><h3>「どこを見るか」まで自分で見つける</h3><p>線・輪郭 → 目や耳 → 顔全体 →「猫」。層を深く重ねて特徴を自動で発見</p><p class="eg">「ディープ」＝深い層</p></div>
+      </div>
+      <p class="msg">層を深くしたことで、画像・音声・言葉を扱えるようになった。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-gen" data-part="course" aria-label="生成AIは次の言葉を予測する">
+    <div class="inner">
+      <p class="part"><span class="tag c1">第1章</span>生成AIとは</p>
+      <h2>「見分けるAI」から「作り出すAI」へ</h2>
+      <div class="nw-wrap">
+        <div style="display:flex;flex-direction:column;gap:.8em">
+          <p class="prompt-line">「日本の首都は」</p>
+          <div class="bars" id="bars">
+            <div class="barrow"><span>東京</span><span class="b"><i data-w="72"></i></span><span class="pct tnum">72%</span></div>
+            <div class="barrow"><span>大阪</span><span class="b"><i data-w="15"></i></span><span class="pct tnum">15%</span></div>
+            <div class="barrow"><span>京都</span><span class="b"><i data-w="5"></i></span><span class="pct tnum">5%</span></div>
+          </div>
+          <p class="muted">※確率は説明のための例です。</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.8em">
+          <div class="card"><h3>しくみ</h3><p>「次に来る単語」を確率で予測し、1語ずつ積み重ねて文章を作る。</p></div>
+          <div class="card" style="border-left:4px solid var(--ng)"><h3>注意</h3><p>事実を調べているのではなく、もっともらしい続きを予測している。だから、誤った内容（ハルシネーション）を作ることがある。</p></div>
+        </div>
+      </div>
+      <p class="msg">生成AIは、ディープラーニングを使って「次の言葉」を予測する技術。</p>
+      <p class="note">では、AIはどうやって学ぶのか？ と問いかけて第2章へ。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-learn" data-part="course" aria-label="AIの学び方は3種類">
+    <div class="inner">
+      <p class="part"><span class="tag c2">第2章</span>AIの学び方</p>
+      <h2>AIの学び方は3種類。人の学び方とよく似ている</h2>
+      <div class="learn">
+        <div class="card">
+          <svg viewBox="0 0 160 60" aria-hidden="true"><rect x="6" y="14" width="34" height="30" rx="4" fill="var(--c2)" fill-opacity=".2"/><text x="23" y="34" text-anchor="middle" font-size="12" fill="var(--head)">写真</text><path d="M48 29h30" stroke="var(--c2)" stroke-width="2"/><path d="M74 24l6 5-6 5" fill="none" stroke="var(--c2)" stroke-width="2"/><rect x="88" y="8" width="62" height="18" rx="9" fill="var(--c2)"/><text x="119" y="21" text-anchor="middle" font-size="11" fill="#fff">正解：猫</text><rect x="88" y="32" width="62" height="18" rx="9" fill="var(--c2)" fill-opacity=".5"/><text x="119" y="45" text-anchor="middle" font-size="11" fill="#fff">正解：犬</text></svg>
+          <h3>教師あり学習</h3><p>正解つきで学ぶ</p><p class="eg">例：迷惑メール判定</p></div>
+        <div class="card">
+          <svg viewBox="0 0 160 60" aria-hidden="true"><g fill="var(--c2)"><circle cx="30" cy="20" r="5"/><circle cx="42" cy="30" r="5"/><circle cx="24" cy="36" r="5"/><circle cx="38" cy="44" r="5"/></g><g fill="var(--c2)" fill-opacity=".45"><circle cx="112" cy="18" r="5"/><circle cx="126" cy="28" r="5"/><circle cx="110" cy="38" r="5"/><circle cx="130" cy="44" r="5"/></g><ellipse cx="33" cy="32" rx="24" ry="22" fill="none" stroke="var(--c2)" stroke-dasharray="3 3"/><ellipse cx="120" cy="31" rx="24" ry="22" fill="none" stroke="var(--c2)" stroke-dasharray="3 3"/></svg>
+          <h3>教師なし学習</h3><p>正解なしでパターンを見つける</p><p class="eg">例：顧客のセグメント分け</p></div>
+        <div class="card">
+          <svg viewBox="0 0 160 60" aria-hidden="true"><rect x="8" y="16" width="40" height="28" rx="6" fill="var(--c2)"/><text x="28" y="34" text-anchor="middle" font-size="12" fill="#fff">AI</text><rect x="110" y="16" width="44" height="28" rx="6" fill="var(--c2)" fill-opacity=".25"/><text x="132" y="34" text-anchor="middle" font-size="11" fill="var(--head)">環境</text><path d="M52 22h52" stroke="var(--c2)" stroke-width="2"/><path d="M100 17l6 5-6 5" fill="none" stroke="var(--c2)" stroke-width="2"/><text x="78" y="16" text-anchor="middle" font-size="9" fill="var(--muted)">行動</text><path d="M106 40H54" stroke="var(--c2)" stroke-width="2" stroke-dasharray="4 3"/><path d="M58 35l-6 5 6 5" fill="none" stroke="var(--c2)" stroke-width="2"/><text x="78" y="56" text-anchor="middle" font-size="9" fill="var(--muted)">報酬</text></svg>
+          <h3>強化学習</h3><p>試行錯誤して、報酬で学ぶ</p><p class="eg">例：囲碁AI、ロボット制御</p></div>
+      </div>
+      <div class="quiz">
+        <p class="q">クイズ：「過去の売上データと『成約／失注』の結果から、新しい商談の成約しやすさを予測する」のは？</p>
+        <div class="choices" id="quiz">
+          <button type="button" data-ok="1">A. 教師あり学習</button>
+          <button type="button">B. 教師なし学習</button>
+          <button type="button">C. 強化学習</button>
+        </div>
+        <p class="qres" id="qres" role="status"></p>
+      </div>
+      <p class="note">クイズはチャットで記号を答えてもらい、正解発表は10秒以内でテンポよく。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-steps" data-part="course" aria-label="生成AIは3段階で作られる">
+    <div class="inner">
+      <p class="part"><span class="tag c2">第2章</span>生成AIの作られ方</p>
+      <h2>ChatGPTやClaudeは、3つの学び方を組み合わせて作られる</h2>
+      <div class="stairs">
+        <div class="step"><span class="n">① 事前学習｜教師なし（自己教師あり）</span><p>大量の文章で「穴埋め」を練習する</p><span class="become">物知りになる</span></div>
+        <div class="step"><span class="n">② 指示チューニング｜教師あり</span><p>「質問と模範回答」をお手本にして学ぶ</p><span class="become">指示に従えるようになる</span></div>
+        <div class="step"><span class="n">③ RLHF｜強化学習</span><p>人の評価を報酬にして、回答の質を調整する</p><span class="become">感じよく役に立つようになる</span></div>
+      </div>
+      <p class="msg">どの段階も、学習には時間とコストがかかる。では、自社の情報を覚えさせるには？</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-rag" data-part="course" aria-label="RAGのしくみ">
+    <div class="inner">
+      <p class="part"><span class="tag c3">第3章</span>RAG</p>
+      <h2>AIに社内ルールを答えさせたい。どうする？</h2>
+      <div class="ab">
+        <div class="card"><span class="lbl">A</span><h3>社内資料でAIを学習し直す</h3><p>時間もコストも大きい</p></div>
+        <div class="card pick"><span class="lbl">B</span><h3>答える前に、社内資料を探して渡す</h3><p>これが <b>RAG</b>＝AIに「カンニングペーパー」を渡してから答えさせる仕組み</p></div>
+      </div>
+      <div class="flow" aria-label="RAGの流れ">
+        <div class="r"><b>1 質問</b>有給休暇の申請方法は？</div>
+        <div class="r"><b>2 検索</b>社内文書を探す</div>
+        <div class="r"><b>3 取り出す</b>就業規則 第12条</div>
+        <div class="g"><b>4 渡す</b>質問と文書をLLMへ</div>
+        <div class="g"><b>5 回答</b>根拠つきで答える</div>
+      </div>
+      <div class="flow-legend"><span class="r">Retrieval（検索）</span><span class="g">Generation（生成）</span><span>＋ Augmented（拡張）＝ RAG</span></div>
+      <p class="note">30分版ではここでRAGあり／なしの比較デモ（NotebookLMなど）を行う。今回は時間の都合で省略。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="c-sum" data-part="course" aria-label="RAGの注意点とまとめ">
+    <div class="inner">
+      <p class="part"><span class="tag c3">第3章</span>注意点とまとめ</p>
+      <h2>RAGの成否は「AIの性能」より「資料の整え方」で決まる</h2>
+      <div class="g3">
+        <div class="card" style="border-top:4px solid var(--c1)"><h3>1 全体構造</h3><p>AI ⊃ 機械学習 ⊃ ディープラーニング ⊃ 生成AI。生成AIは「次の単語」を予測している</p></div>
+        <div class="card" style="border-top:4px solid var(--c2)"><h3>2 学び方</h3><p>AIの学び方は3種類。生成AIはそれらを組み合わせて作られる</p></div>
+        <div class="card" style="border-top:4px solid var(--c3)"><h3>3 RAG</h3><p>学習し直さずに社内の知識を足せる。ただし検索の精度と、文書の整理・分割（チャンク化）が成果を左右する</p></div>
+      </div>
+      <p class="ask">あなたの会社なら、<br>AIにどんな資料を持たせたいですか？</p>
+    </div>
+  </section>
+
+  <!-- ================= 学習パート ================= -->
+  <section class="slide cover" id="u-cover" data-part="unit" aria-label="AIで成果を生み出す企業と人材とは">
+    <div class="inner">
+      <p class="part tnum">10:30–10:45｜AI教育ユニットの学習パート</p>
+      <h1>AIで成果を生み出す<br><span class="q">企業と人材</span>とは？</h1>
+      <p class="sub">AIを使うことから、AIで価値を生み出すことへ。</p>
+      <p class="msg" style="margin-top:1em">AIを使う量ではなく、AIを使って成果を生み出す能力が重要。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-q" data-part="unit" aria-label="最初の問い">
+    <div class="inner">
+      <p class="part">最初の問い</p>
+      <h2>AIを使えば、仕事の成果は上がるのでしょうか？</h2>
+      <div class="qs">
+        <div>AIを導入した企業は、本当に業績が上がっているのか？</div>
+        <div>AIを頻繁に使う人ほど、成果を上げているのか？</div>
+        <div>AIの使い方を教えれば、仕事ができるようになるのか？</div>
+      </div>
+      <p class="msg">AIを使っていることと、AIで成果を出していることは同じではない。</p>
+      <p class="note">ここでは正解を示さず考えてもらう。「皆さんは、AIを使うことで自分の仕事の成果が上がったと実感していますか？」</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-data" data-part="unit" aria-label="調査が示すAI活用の実態">
+    <div class="inner">
+      <p class="part">調査データ</p>
+      <h2>AIの利用は広がっている。しかし……</h2>
+      <p class="lede">「AI環境における人材とマネジメントに関する定量調査」によると</p>
+      <div class="stats">
+        <div class="stat"><div class="big-num tnum">54.3<small>%</small></div><p>正規雇用者の生成AI業務利用率（2025年10月の41.9%から）</p></div>
+        <div class="stat"><div class="big-num tnum">+12.4<small>pt</small></div><p>半年間の増加幅。週4日以上のヘビーユーザーは21.1%（+5.5pt）</p></div>
+      </div>
+      <div class="issues">
+        <div class="card"><h3>使うほど大きくなる業務課題</h3><ul><li>欲しい回答を得るために指示を何度も出し直す</li><li>業務の前提や背景をAIに入力するのが負担</li></ul></div>
+        <div class="card"><h3>3割を超える組織課題</h3><ul><li>AIの教育・サポートが正式な業務や評価に位置づけられていない</li><li>データが部署ごとに分断／手順が人ごとに異なり例外が多い</li></ul></div>
+      </div>
+      <p class="msg">AIを使う人が増えても、成果が自動的に増えるわけではない。</p>
+      <p class="src">出典：パーソル総合研究所（2026年7月22日、全国の正規雇用者3,300人）<br>「AI環境における人材とマネジメントに関する定量調査」を発表　正規雇用者の生成AI利用率は54.3％、半年で12.4pt増加<br><a href="https://rc.persol-group.co.jp/news/release-20260722-1000-1/" target="_blank" rel="noopener">https://rc.persol-group.co.jp/news/release-20260722-1000-1/</a></p>
+      <p class="note">「AIの教育・サポートが正式な業務や評価に位置づけられていない」は、私たちAI教育ユニット自身にも関わる課題。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-meta" data-part="unit" aria-label="メタ・スキルによる成果の差">
+    <div class="inner">
+      <p class="part">調査データ</p>
+      <h2>同じようにAIを使っていても、成果に差がある</h2>
+      <div class="meta-wrap">
+        <div class="person"><span class="who">Aさん</span><span class="muted">AIの利用頻度は高い</span><p>回答をそのまま使う</p></div>
+        <div class="gap"><span>成果の差</span><div class="big-num tnum">3.6<small>倍</small></div><span>最大</span></div>
+        <div class="person b"><span class="who">Bさん</span><span class="muted">AIの利用頻度は同じ</span><p>情報を整理し、優先順位をつけ、検証し、次に活かす</p></div>
+      </div>
+      <div class="skills">
+        <div><b>集める</b><span>構造的に整理する</span></div>
+        <div><b>決める</b><span>優先順位をつける</span></div>
+        <div><b>確かめる</b><span>実地で検証する</span></div>
+        <div><b>壊す</b><span>失敗や変化から立ち直る</span></div>
+        <div><b>蓄える</b><span>組織知を更新する</span></div>
+      </div>
+      <p class="msg">AIの利用量ではなく、AIとの向き合い方（メタ・スキル）が成果を左右する。</p>
+      <p class="src">AIヘビーユーザーのうち、メタ・スキルの高い層と低い層で、仕事のやり方の見直し・成果水準・業務スピードなどの特定の成果指標に3.3〜3.6倍の差。企業業績全般の差ではない。出典：パーソル総合研究所（2026年7月22日）</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-person" data-part="unit" aria-label="成果を上げる人とそうでない人">
+    <div class="inner">
+      <p class="part">人の違い</p>
+      <h2>同じAIを使っていても、何が違うのか？</h2>
+      <div class="two">
+        <div class="vs">
+          <div class="h w">成果を上げる人</div><div class="h l">成果を上げにくい人</div>
+          <div class="w">問いを考える</div><div class="l">指示を入力する</div>
+          <div class="w">課題の本質を探る</div><div class="l">目の前の作業を処理する</div>
+          <div class="w">仕事を分解する</div><div class="l">大きな仕事を丸投げする</div>
+          <div class="w">仮説を立てる</div><div class="l">AIの答えを待つ</div>
+          <div class="w">結果を検証する</div><div class="l">回答をそのまま使う</div>
+          <div class="w">学びを共有する</div><div class="l">個人の中に閉じる</div>
+        </div>
+        <div class="side">
+          <div class="card"><h3>調査：AI環境のハイパフォーマーに関連が強い思考特性</h3><div class="chips"><span>好奇心</span><span>レジリエンス</span><span>メタ視点</span></div><p class="muted">非AI環境では「相談力」など対人特性との関連が強かった</p></div>
+          <div class="card"><h3>ベースとなる思考・マインド</h3><p><b>閃く</b>（アニマル・スピリット）：AIで発想を素早く広げる<br><b>練る</b>（立体思考）：AIで自分の考えを深める</p></div>
+          <p><span class="hyp">左の比較はチームによる整理（仮説）</span></p>
+        </div>
+      </div>
+      <p class="msg">AIを使いこなす人とは、操作が上手な人ではない。AIを使って自分の仕事を変えられる人である。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-company" data-part="unit" aria-label="成果が上がる企業とそうでない企業">
+    <div class="inner">
+      <p class="part">組織の違い</p>
+      <h2>個人の能力だけでは、企業の業績は変わらない</h2>
+      <div class="two">
+        <div class="vs">
+          <div class="h w">成果が上がる企業</div><div class="h l">成果が上がりにくい企業</div>
+          <div class="w">経営課題からAI活用を考える</div><div class="l">AI導入自体が目的</div>
+          <div class="w">業務プロセスを見直す</div><div class="l">既存業務にAIを追加する</div>
+          <div class="w">AIの教育・サポートを正式な業務・評価にする</div><div class="l">推進役の善意に任せる</div>
+          <div class="w">データや手順を整備する</div><div class="l">データも手順もバラバラ</div>
+          <div class="w">上司が「チューナー役」になる</div><div class="l">上司は成果物を管理するだけ</div>
+          <div class="w">成果を測定・改善する</div><div class="l">利用率や回数だけを測る</div>
+        </div>
+        <div class="side">
+          <div class="card"><h3>調査：マネジメント</h3><p>AIヘビー利用職場では「仕事の枠を示す」「裁量範囲を示す」「学びへの接続」がパフォーマンス向上と関連</p></div>
+          <div class="card"><h3>調査：職場の変化</h3><p>「人よりAIに話すほうが気楽」はヘビーユーザー31.6%、ライトユーザー20.1%</p></div>
+          <div class="card"><h3>調査の提言</h3><p><b>AI「を」先に進める組織から、AI「と」先に進む組織へ。</b></p></div>
+          <p><span class="hyp">左の比較はチームによる整理（仮説）</span></p>
+        </div>
+      </div>
+      <p class="msg">個人がAIを使えるだけでは不十分。組織としてAIの成果を生み出す仕組みが必要。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-mgmt1" data-part="unit" aria-label="マネジメント：仕事の枠を示す">
+    <div class="inner">
+      <p class="part">詳しく見る｜調査：マネジメント</p>
+      <h2>上司は「成果物の管理者」から「チューナー役」へ</h2>
+      <div class="mg3"><div class="on"><b>① 仕事の枠を示す</b><span>目的・方向性を明確にする</span></div><div><b>② 裁量範囲を示す</b><span>任せる範囲と責任を明確にする</span></div><div><b>③ 学びへの接続</b><span>経験を次の成長につなげる</span></div></div>
+      <p class="lede">AIに任せる仕事が増えるほど、「何を目指すのか」が重要になる。上司が示すのは、何を達成するのか・誰のための仕事か・何を成果とするのか・どの品質水準を求めるのか。</p>
+      <div class="ba">
+        <div class="card before"><span class="lbl">従来の指示</span><p>「AIを使って営業資料を作ってください」</p></div>
+        <span class="arrow" aria-hidden="true">▶</span>
+        <div class="card after"><span class="lbl">仕事の枠を示す</span><p>「顧客の経営課題を理解し、次回商談につながる提案資料を作る。顧客の事業状況と提案の根拠を必ず確認する」</p></div>
+      </div>
+      <p class="msg">AIに作業を任せるだけでなく、仕事の目的と評価基準を共有する。</p>
+      <p class="src">調査結果：AIヘビー利用職場では「仕事の枠を示す」「裁量範囲を示す」「学びへの接続」がパフォーマンス向上と関連（パーソル総合研究所 2026年7月22日）。各行動の説明と例は、ユニットによる整理。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-mgmt2" data-part="unit" aria-label="マネジメント：裁量範囲と学びへの接続">
+    <div class="inner">
+      <p class="part">詳しく見る｜調査：マネジメント</p>
+      <h2>安心して挑戦できる境界線を示し、経験を学びにつなげる</h2>
+      <div class="mg3"><div><b>① 仕事の枠を示す</b><span>目的・方向性を明確にする</span></div><div class="on"><b>② 裁量範囲を示す</b><span>任せる範囲と責任を明確にする</span></div><div><b>③ 学びへの接続</b><span>経験を次の成長につなげる</span></div></div>
+      <div class="half">
+        <div>
+          <h3>② 裁量範囲を示す：社員が迷うのは「どこまで自分で判断してよいか」</h3>
+          <table class="rule">
+            <thead><tr><th>領域</th><th>裁量の考え方（例）</th></tr></thead>
+            <tbody>
+              <tr><td>情報収集</td><td>承認済みAIの範囲で自由</td></tr>
+              <tr><td>社内資料作成</td><td>AIによる下書きを許可</td></tr>
+              <tr class="human"><td>顧客向け資料</td><td>人間による確認・承認が必要</td></tr>
+              <tr><td>顧客情報</td><td>データ区分に応じて入力制限</td></tr>
+              <tr class="human"><td>契約・金銭判断</td><td>人間が最終決定</td></tr>
+            </tbody>
+          </table>
+          <p class="muted">AI利用を細かく禁止するのではなく、どこまでなら任せてよいかをはっきりさせる。</p>
+        </div>
+        <div>
+          <h3>③ 学びへの接続：発見や失敗を、個人の経験で終わらせない</h3>
+          <ol class="refl">
+            <li>AIを使って何がうまくいったか</li>
+            <li>なぜうまくいったのか</li>
+            <li>何が失敗したのか</li>
+            <li>次はどう改善するか</li>
+            <li>他の人にも使える知識は何か</li>
+          </ol>
+          <p class="muted">振り返りを、次の仕事や学習機会につなげる。</p>
+        </div>
+      </div>
+      <p class="note">裁量の表は一例。実際のルールは各社のデータ区分・利用規程に合わせて決める。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-change" data-part="unit" aria-label="職場の変化と調査の提言">
+    <div class="inner">
+      <p class="part">詳しく見る｜調査：職場の変化・調査の提言</p>
+      <h2>人よりAIに相談する職場で、組織は何を変えるべきか</h2>
+      <div class="half">
+        <div>
+          <h3>職場の変化：「人よりAIに話すほうが気楽」</h3>
+          <div class="pct2">
+            <div class="barrow"><span>ヘビーユーザー</span><span class="b"><i style="width:31.6%"></i></span><span class="pct tnum">31.6%</span></div>
+            <div class="barrow"><span>ライトユーザー</span><span class="b"><i style="width:20.1%;opacity:.5"></i></span><span class="pct tnum">20.1%</span></div>
+          </div>
+          <p class="muted">AI活用が進むほど「上司よりAIに相談」する傾向も強まっていた。</p>
+        </div>
+        <div>
+          <h3>調査の提言：AI「を」先に進める組織から、AI「と」先に進む組織へ</h3>
+          <div class="wo">
+            <div class="hd"></div><div class="hd o">AI「を」進める</div><div class="hd n">AI「と」進む</div>
+            <div class="k">起点</div><div class="o">AIツールの導入</div><div class="n">仕事の目的と課題</div>
+            <div class="k">目標</div><div class="o">利用率・利用回数</div><div class="n">成果と仕事の変化</div>
+            <div class="k">上司</div><div class="o">成果物を管理する</div><div class="n">枠・裁量・学びを整える</div>
+            <div class="k nw">人の役割</div><div class="o">AIを使う人</div><div class="n">AIと考え、仕事を変える人</div>
+          </div>
+          <p class="muted"><span class="hyp">対比はユニットによる解釈</span></p>
+        </div>
+      </div>
+      <p class="msg">AIで相談しやすくなった分、人と人との対話を「AIでは得られない学び」の場として設計し直す。</p>
+      <p class="src">調査結果の数値と提言：パーソル総合研究所（2026年7月22日）</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-issues" data-part="unit" aria-label="ここから考えられる3つの問題とAI教育ユニットへの問い">
+    <div class="inner">
+      <p class="part">詳しく見る｜調査：職場の変化</p>
+      <h2>ここから考えられる3つの問題</h2>
+      <div class="two">
+        <div class="probs">
+          <div class="prob"><span class="n">1</span><b>上司が知らないところで、社員の悩みがAIに蓄積される</b><p>社員は業務上の迷いや疑問をAIに相談しているかもしれない。しかし上司は、その内容を把握できない。</p></div>
+          <div class="prob"><span class="n">2</span><b>上司の役割が変わる</b><p>知識を教える・質問に答える役割はAIに移っていく。上司には、本人が気づいていない課題を発見する、挑戦を促す、判断を支援する役割が求められる。</p></div>
+          <div class="prob"><span class="n">3</span><b>人間同士の対話が減る可能性がある</b><p>AIとの対話が増えること自体は悪くない。ただし、意見交換や協働、感情的な理解までAIに置き換わると、組織の学習機会が失われる可能性がある。</p></div>
+        </div>
+        <div class="askbox">
+          <h3>AI教育ユニットへの問い</h3>
+          <ol>
+            <li>なぜ社員は、上司よりAIに相談したいのか？</li>
+            <li>AIが相談相手になることで、人間のコミュニケーションはどう変わるのか？</li>
+            <li>AIに相談するだけでなく、その学びを人間同士で共有する仕組みが必要ではないか？</li>
+            <li>AIを使って、社員同士の対話を増やすことはできないか？</li>
+          </ol>
+        </div>
+      </div>
+      <p class="note">答えはここで出さず、「次週に向けて」の話し合いに持ち越してもよい。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-7" data-part="unit" aria-label="AI時代に必要な7つの能力">
+    <div class="inner">
+      <p class="part">育てたい能力</p>
+      <h2>AIの操作方法だけを教えていてよいのか？</h2>
+      <div class="wheel-wrap">
+        <div class="wheel"><svg id="wheel" viewBox="0 -4 420 388" role="group" aria-label="7つの能力。押すと説明が出ます"></svg></div>
+        <div class="ability" aria-live="polite"><span class="n" id="abN"></span><h3 id="abT"></h3><p id="abD"></p></div>
+      </div>
+      <p class="msg">AI時代の人材育成は、知識の習得から思考・行動・経験の育成へ。</p>
+      <p class="src"><span class="hyp">7つの能力はチーム独自の仮説</span>　調査のメタ・スキル（集める・決める・確かめる・壊す・蓄える）を参考に整理</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-exp" data-part="unit" aria-label="AI時代の人材育成に必要な経験">
+    <div class="inner">
+      <p class="part">どう育てるか</p>
+      <h2>教えるだけではなく、経験させる</h2>
+      <div class="two">
+        <div class="tri">
+          <svg viewBox="-10 -10 420 320" role="img" aria-label="手触り経験、踏み出し経験、見渡し経験の3つが三角形に並び、中央が人間の思考・創造性の拡張">
+            <polygon points="200,30 360,270 40,270" fill="var(--callout)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="200" y="176" text-anchor="middle" font-size="19" font-weight="700" fill="var(--head)">人間の思考・</text>
+            <text x="200" y="202" text-anchor="middle" font-size="19" font-weight="700" fill="var(--head)">創造性の拡張</text>
+            <circle cx="200" cy="30" r="34" fill="var(--head)"/><text x="200" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="var(--bg)">手触り</text>
+            <circle cx="360" cy="270" r="34" fill="var(--head)"/><text x="360" y="276" text-anchor="middle" font-size="13" font-weight="700" fill="var(--bg)">踏み出し</text>
+            <circle cx="40" cy="270" r="34" fill="var(--head)"/><text x="40" y="276" text-anchor="middle" font-size="15" font-weight="700" fill="var(--bg)">見渡し</text>
+          </svg>
+          <ul class="facts">
+            <li>AIを継続利用しても、半年でアニマル・スピリットはほとんど上がらなかった</li>
+            <li>AI継続利用者の学びは、実践型からインプット型へやや傾いている</li>
+          </ul>
+        </div>
+        <div class="exp">
+          <div class="card"><b>手触り経験</b><span>現場で身体感覚を伴う経験 → 実際の業務に触れる</span></div>
+          <div class="card"><b>踏み出し経験</b><span>所属組織を超えた経験 → 他部署・他業界と交流する</span></div>
+          <div class="card"><b>見渡し経験</b><span>複数の立場や時間軸から俯瞰する → 経営・顧客・現場の視点を持つ</span></div>
+        </div>
+      </div>
+      <p class="msg">AIを使うだけでは、人間の能力は育たない。AI教育は、AIの中だけで完結してはいけない。</p>
+      <p class="src">出典：パーソル総合研究所（2026年7月22日）。示されているのは「関連」であり、因果関係ではない。</p>
+    </div>
+  </section>
+
+  <section class="slide" id="u-role" data-part="unit" aria-label="AI教育ユニットの役割を再定義する">
+    <div class="inner">
+      <p class="part">私たちの役割</p>
+      <h2>私たちは、何を教えるチームなのか？</h2>
+      <div class="shift">
+        <div class="card old"><h3>従来のAI教育</h3><ul><li>AIツールの操作方法</li><li>プロンプトの書き方</li><li>便利な使い方</li><li>業務効率化の事例</li></ul></div>
+        <span class="arrow" aria-hidden="true">▶</span>
+        <div class="card new"><h3>これからのAI教育</h3><ul><li>問いを生み出す力を育てる</li><li>課題を発見する力を育てる</li><li>AIと一緒に考える力を育てる</li><li>AIの回答を評価する力を育てる</li><li>新しい仕事に挑戦する力を育てる</li><li>学びを組織に広げる力を育てる</li></ul></div>
+      </div>
+      <div class="cycle" aria-label="講師から受講者への一方向から、循環モデルへ"><span>実験</span><i>→</i><span>発見</span><i>→</i><span>共有</span><i>→</i><span>実践</span><i>↻</i></div>
+      <p class="msg">AIの知識を伝えるだけではなく、AIを通じて人の能力と組織の可能性を広げる。</p>
+    </div>
+  </section>
+
+  <section class="slide tint" id="u-discuss" data-part="unit" aria-label="チームで考える問い">
+    <div class="inner">
+      <p class="part">チームで考える</p>
+      <h2>私たちは、どんな人を育てたいのか？</h2>
+      <div class="discuss">
+        <div class="card"><span class="n">問い1</span><h3>AIを使いこなせる人とは、どんな人？</h3><p>プロンプトが上手な人？ それとも、AIで新しい価値を生み出せる人？</p></div>
+        <div class="card"><span class="n">問い2</span><h3>今のAI教育で足りないものは？</h3><p>知識？ 経験？ 問いを立てる機会？ 挑戦できる環境？</p></div>
+        <div class="card"><span class="n">問い3</span><h3>私たちは、どんな教育を提供すべき？</h3><p>使い方を教える？ それとも、AIで今までできなかったことに挑戦する機会をつくる？</p></div>
+      </div>
+      <p class="note">学習パートは15分のため、ここでは問いを共有するだけにとどめ、話し合いは「次週に向けて」で続ける。</p>
+    </div>
+  </section>
+
+  <section class="slide final" id="u-final" data-part="unit" aria-label="最後のメッセージ">
+    <div class="inner">
+      <p class="part">最後に</p>
+      <p class="big">私たちAI教育ユニットは、<br>AIを通じて、どんな企業・人を<br>世の中に増やしたいのか？</p>
+      <p>AIを使える人を増やすだけではない。AIを使って問いを生み出し、課題を発見し、今までできなかったことに挑戦し、新しい価値を生み出せる人を増やす。そして、<span class="nw">その人たちが</span>活躍できる企業を増やす。</p>
+    </div>
+  </section>
+
+  <!-- ================= 次週に向けて ================= -->
+  <section class="slide" id="next" data-part="next" aria-label="次週に向けて">
+    <div class="inner">
+      <p class="part tnum">10:45–｜次週に向けて</p>
+      <h2>次週に向けて</h2>
+      <div class="todo" style="max-width:52em">
+          <label><input type="checkbox" data-save="t1"><span>3つの問いへの自分の答えを考える</span></label>
+          <label><input type="checkbox" data-save="t2"><span>「自社ならAIにどんな資料を持たせたいか」を1つ考えてくる</span></label>
+          <label><input type="checkbox" data-save="t3"><span>AI講座パートを「自分が教えるなら」どう話すか、1か所選んで考えてくる</span></label>
+          <label><input type="checkbox" data-save="t4"><span>次回テーマ：［どんなテーマについて知りたいですか？］</span></label>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="nav" aria-label="スライド移動">
+  <a class="nb" href="../index.html" style="text-decoration:none">← Home</a>
+  <button class="nb" id="prev" type="button">前へ</button>
+  <span class="pg tnum" id="pg">1 / 1</span>
+  <button class="nb" id="nextBtn" type="button">次へ</button>
+</nav>
+
+<script>
+(function(){
+  "use strict";
+  var store = {
+    get: function(k){ try { return localStorage.getItem("aiu2:"+k); } catch(e){ return null; } },
+    set: function(k,v){ try { localStorage.setItem("aiu2:"+k, v); } catch(e){} }
+  };
+
+  /* ---------- parts & timer ---------- */
+  var PARTS = [
+    {id:"course", name:"AI講座",         min:15, start:"c-cover"},
+    {id:"unit",   name:"学習パート",     min:15, start:"u-cover"},
+    {id:"next",   name:"次週に向けて",   min:10, start:"next"}
+  ];
+  var track = document.getElementById("track");
+  PARTS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "seg"; b.dataset.part = p.id;
+    b.setAttribute("role","listitem");
+    b.setAttribute("aria-label", p.name + " " + p.min + "分へ移動");
+    b.innerHTML = '<span class="fill"></span><span>' + p.name + ' ' + p.min + '分</span>';
+    b.addEventListener("click", function(){ go(p.start); });
+    track.appendChild(b);
+  });
+  var timer = { part:null, left:0, running:false, iv:null };
+  var clock = document.getElementById("clock"), tStart = document.getElementById("tStart");
+  function fmt(s){ var neg = s<0; s = Math.abs(s); var m = Math.floor(s/60), r = s%60; return (neg?"-":"") + m + ":" + (r<10?"0":"") + r; }
+  function partOf(id){ for(var i=0;i<PARTS.length;i++){ if(PARTS[i].id===id) return PARTS[i]; } return null; }
+  function setPart(pid){ if(timer.part === pid) return; stop(); timer.part = pid; var p = partOf(pid); timer.left = p ? p.min*60 : 0; renderClock(); }
+  function renderClock(){
+    var p = partOf(timer.part);
+    if(!p){ clock.textContent = "40:00"; clock.classList.remove("over"); tStart.disabled = true; tStart.style.opacity=.4; drawFill(); return; }
+    tStart.disabled = false; tStart.style.opacity = 1;
+    clock.textContent = fmt(timer.left); clock.classList.toggle("over", timer.left < 0);
+    tStart.textContent = timer.running ? "一時停止" : "開始";
+    drawFill();
+  }
+  function drawFill(){
+    var idx = -1; PARTS.forEach(function(p,i){ if(p.id===timer.part) idx=i; });
+    Array.prototype.forEach.call(track.children, function(seg,i){
+      seg.classList.toggle("now", i===idx); seg.classList.toggle("done", idx>-1 && i<idx);
+      var f = seg.querySelector(".fill");
+      if(i===idx){ var tot = PARTS[i].min*60; f.style.width = Math.min(100, Math.max(0,(tot - timer.left)/tot*100)) + "%"; }
+      else if(!(idx>-1 && i<idx)){ f.style.width = "0"; } else { f.style.width = ""; }
+    });
+  }
+  function start(){ if(timer.running || !timer.part) return; timer.running = true; timer.iv = setInterval(function(){ timer.left--; renderClock(); }, 1000); renderClock(); }
+  function stop(){ timer.running = false; clearInterval(timer.iv); timer.iv = null; renderClock(); }
+  tStart.addEventListener("click", function(){ timer.running ? stop() : start(); });
+  document.getElementById("tReset").addEventListener("click", function(){ stop(); var p = partOf(timer.part); timer.left = p ? p.min*60 : 0; renderClock(); });
+
+  /* ---------- notes ---------- */
+  var tNotes = document.getElementById("tNotes");
+  function setNotes(on){ document.body.classList.toggle("notes", on); tNotes.setAttribute("aria-pressed", on ? "true" : "false"); }
+  tNotes.addEventListener("click", function(){ setNotes(!document.body.classList.contains("notes")); });
+
+  /* ---------- navigation ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var cur = 0, pg = document.getElementById("pg"), prev = document.getElementById("prev"), nextB = document.getElementById("nextBtn");
+  function show(i){
+    i = Math.max(0, Math.min(slides.length-1, i));
+    slides[cur].classList.remove("on"); cur = i;
+    var s = slides[cur]; s.classList.add("on"); s.scrollTop = 0;
+    pg.textContent = (cur+1) + " / " + slides.length;
+    prev.disabled = cur===0; nextB.disabled = cur===slides.length-1;
+    var pid = s.dataset.part;
+    if(pid !== "intro") setPart(pid); else if(!timer.running){ timer.part = null; renderClock(); }
+    if(s.id === "c-gen") growBars();
+    if(location.hash !== "#" + s.id){ try { history.replaceState(null, "", "#" + s.id); } catch(e){} }
+  }
+  function go(id){ for(var i=0;i<slides.length;i++){ if(slides[i].id===id){ show(i); return; } } }
+  window.go = go;
+  prev.addEventListener("click", function(){ show(cur-1); });
+  nextB.addEventListener("click", function(){ show(cur+1); });
+  document.addEventListener("keydown", function(e){
+    var t = e.target.tagName; if(t==="INPUT" || t==="TEXTAREA") return;
+    if(e.key==="ArrowRight" || e.key==="PageDown"){ e.preventDefault(); show(cur+1); }
+    if(e.key==="ArrowLeft" || e.key==="PageUp"){ e.preventDefault(); show(cur-1); }
+    if(e.key==="n" || e.key==="N"){ setNotes(!document.body.classList.contains("notes")); }
+  });
+  document.querySelectorAll("[data-go]").forEach(function(b){ b.addEventListener("click", function(){ go(b.dataset.go); }); });
+  window.addEventListener("hashchange", function(){ var id = location.hash.slice(1); if(id && slides[cur].id !== id) go(id); });
+
+  /* ---------- scatter -> nest ---------- */
+  document.getElementById("toNest").addEventListener("click", function(){ go("c-nest"); });
+
+  /* ---------- next-word bars ---------- */
+  function growBars(){
+    var is = document.querySelectorAll("#bars i");
+    is.forEach(function(i){ i.style.width = "0"; });
+    setTimeout(function(){ is.forEach(function(i){ i.style.width = i.dataset.w + "%"; }); }, 120);
+  }
+
+  /* ---------- quiz ---------- */
+  var qres = document.getElementById("qres");
+  document.querySelectorAll("#quiz button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var ok = b.dataset.ok === "1";
+      document.querySelectorAll("#quiz button").forEach(function(x){ x.classList.remove("ok","ng"); });
+      b.classList.add(ok ? "ok" : "ng");
+      qres.textContent = ok ? "正解。「成約／失注」という正解がついたデータで学ぶので、教師あり学習です。" : "もう一度。正解のついたデータで学んでいるかどうかがヒントです。";
+      qres.style.color = ok ? "var(--ok)" : "var(--ng)";
+    });
+  });
+
+  /* ---------- 7 abilities wheel ---------- */
+  var AB = [
+    ["問いを生み出す力","当たり前を疑い、別の視点から考える"],
+    ["課題を発見・分解する力","仕事を観察し、問題を具体化する"],
+    ["情報を構造化する力","情報の関係や全体像を整理する"],
+    ["仮説を立てる力","複数の可能性を考え、検証する"],
+    ["AIの回答を検証する力","根拠・事実・実務適合性を確認する"],
+    ["新しいことに挑戦する力","今までできなかった仕事を実現する"],
+    ["学びを共有・蓄積する力","個人の発見をチームの知識に変える"]
+  ];
+  var SHORT = ["問い","課題発見","構造化","仮説","検証","挑戦","共有"];
+  var NS = "http://www.w3.org/2000/svg", wheel = document.getElementById("wheel");
+  var cx = 210, cy = 190, R = 138;
+  var core = document.createElementNS(NS, "g");
+  core.innerHTML = '<circle cx="'+cx+'" cy="'+cy+'" r="74" fill="var(--head)"/>' +
+    '<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-size="15" font-weight="700" fill="var(--bg)">AIとの協働による</text>' +
+    '<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" font-size="17" font-weight="700" fill="var(--bg)">価値創出</text>';
+  wheel.appendChild(core);
+  var nodes = [];
+  AB.forEach(function(a, i){
+    var ang = -Math.PI/2 + i * 2*Math.PI/AB.length;
+    var x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+    var line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", cx); line.setAttribute("y1", cy); line.setAttribute("x2", x); line.setAttribute("y2", y);
+    line.setAttribute("stroke", "var(--rule)"); line.setAttribute("stroke-width", "2");
+    wheel.insertBefore(line, core);
+    var g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node"); g.setAttribute("tabindex", "0"); g.setAttribute("role", "button");
+    g.setAttribute("aria-label", a[0]);
+    g.innerHTML = '<circle cx="'+x+'" cy="'+y+'" r="44"/><text x="'+x+'" y="'+(y-6)+'" text-anchor="middle" font-size="13">'+(i+1)+'</text><text x="'+x+'" y="'+(y+14)+'" text-anchor="middle" font-size="16">'+SHORT[i]+'</text>';
+    g.addEventListener("click", function(){ pickAb(i); });
+    g.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); pickAb(i); } });
+    wheel.appendChild(g); nodes.push(g);
+  });
+  function pickAb(i){
+    nodes.forEach(function(n, j){ n.classList.toggle("on", i===j); });
+    document.getElementById("abN").textContent = "能力 " + (i+1) + " / 7";
+    document.getElementById("abT").textContent = AB[i][0];
+    document.getElementById("abD").textContent = "育てたい行動：" + AB[i][1];
+  }
+  pickAb(0);
+
+  /* ---------- saved fields ---------- */
+  document.querySelectorAll("[data-save]").forEach(function(el){
+    var k = el.dataset.save, v = store.get(k);
+    if(el.type === "checkbox"){ el.checked = v === "1"; el.addEventListener("change", function(){ store.set(k, el.checked ? "1" : "0"); }); }
+    else { el.value = v || ""; el.addEventListener("input", function(){ store.set(k, el.value); }); }
+  });
+
+  /* ---------- start ---------- */
+  var startId = location.hash.slice(1);
+  slides[0].classList.add("on"); renderClock();
+  if(startId) go(startId); else show(0);
+})();
+</script>
+</body>
+</html>
