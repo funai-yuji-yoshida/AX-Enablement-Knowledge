@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CRM・SFA・ERP・AIで学ぶ　DXとAX</title>
+<style>
+:root{
+  --bg:#f7f6f2; --surface:#ffffff; --ink:#1f2328; --sub:#5b6370; --line:#e3e0d8;
+  --indigo:#1f6f5c; --indigo-soft:#e3f1ec; --on-indigo:#ffffff; --mark:#e0a83a; --mark-soft:#fdf2dc;
+  --code-bg:#1f2328; --code-ink:#e8e6e1;
+  --ok:#2f7a4f; --ok-soft:#e4f2e7; --ng:#b3372f; --ng-soft:#fbe9e7;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181b; --surface:#1f2226; --ink:#e8e6e1; --sub:#a3a9b2; --line:#33373d;
+    --indigo:#6cc4a8; --indigo-soft:#1d3530; --on-indigo:#16181b; --mark:#e7b65a; --mark-soft:#3a3020;
+    --code-bg:#101214; --code-ink:#e8e6e1;
+    --ok:#7fcf9a; --ok-soft:#1e3324; --ng:#f08a80; --ng-soft:#3a2321;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181b; --surface:#1f2226; --ink:#e8e6e1; --sub:#a3a9b2; --line:#33373d;
+  --indigo:#6cc4a8; --indigo-soft:#1d3530; --on-indigo:#16181b; --mark:#e7b65a; --mark-soft:#3a3020;
+  --code-bg:#101214; --code-ink:#e8e6e1;
+  --ok:#7fcf9a; --ok-soft:#1e3324; --ng:#f08a80; --ng-soft:#3a2321;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);overflow:hidden;
+  font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  font-size:clamp(15px,1.45vw,19px);line-height:1.75;-webkit-font-smoothing:antialiased}
+code,pre{font-family:Consolas,"Hiragino Sans","Yu Gothic UI",monospace}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--indigo)}
+:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+
+.deck{position:relative;height:100%;display:flex;flex-direction:column}
+.stage{position:relative;flex:1;min-height:0}
+.slide{position:absolute;inset:0;overflow-y:auto;display:none;padding:clamp(24px,4vw,56px) clamp(20px,5vw,72px)}
+.slide.active{display:flex;flex-direction:column;animation:fade .35s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.slide.active{animation:none}*{transition:none!important}}
+.inner{width:100%;max-width:1120px;margin:auto}
+
+/* controls */
+.bar{display:flex;align-items:center;gap:12px;padding:10px clamp(14px,3vw,32px);border-top:1px solid var(--line);background:var(--surface)}
+.bar .navbtn{border:1px solid var(--line);background:transparent;border-radius:6px;padding:6px 14px;font-size:15px;white-space:nowrap}
+.bar .navbtn:hover:not(:disabled){border-color:var(--indigo)}
+.bar .navbtn:disabled{opacity:.35;cursor:default}
+.hide-sm{display:inline}
+@media (max-width:620px){.hide-sm{display:none}}
+.progress{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress span{display:block;height:100%;width:0;background:var(--indigo);transition:width .3s}
+.count{font-size:14px;color:var(--sub);min-width:4.5em;text-align:right;font-variant-numeric:tabular-nums}
+.toc{position:absolute;inset:0;background:var(--bg);z-index:5;display:none;overflow-y:auto;padding:40px clamp(20px,5vw,72px)}
+.toc.open{display:block}
+.toc ol{max-width:720px;margin:0 auto;padding:0;list-style:none}
+.toc li button{width:100%;text-align:left;border:none;border-bottom:1px solid var(--line);background:none;padding:12px 4px;display:flex;gap:16px}
+.toc li button span{color:var(--sub);min-width:2em;font-variant-numeric:tabular-nums}
+.toc h2{max-width:720px;margin:0 auto 16px}
+
+/* type */
+h1{font-size:clamp(34px,6vw,72px);font-weight:900;line-height:1.2;margin:0 0 20px}
+h2{font-size:clamp(26px,3.6vw,44px);font-weight:900;line-height:1.3;margin:0 0 6px}
+h3{font-size:clamp(18px,1.9vw,23px);font-weight:900;margin:0 0 6px;line-height:1.45}
+p{margin:0 0 12px}
+.def{font-size:clamp(17px,1.9vw,23px);color:var(--sub);margin:0 0 24px}
+.tag{display:inline-block;font-size:14px;font-weight:700;color:var(--indigo);background:var(--indigo-soft);border-radius:4px;padding:1px 10px;margin-bottom:10px}
+.note{font-size:14px;color:var(--sub)}
+mark{background:linear-gradient(transparent 62%,var(--mark) 62%);color:inherit;padding:0 2px}
+.msg{margin-top:22px;padding:16px 0;border-top:2px solid var(--ink);font-size:clamp(18px,2.2vw,28px);font-weight:900;line-height:1.5}
+
+/* cover */
+.cover .inner{max-width:900px}
+.cover .rule{width:72px;height:6px;background:var(--indigo);margin:28px 0 22px}
+.cover .sub{font-size:clamp(18px,2.4vw,28px);font-weight:700;margin:0 0 10px}
+.cover .org{color:var(--sub);font-size:15px;margin-top:36px}
+
+/* common blocks */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--indigo);border-radius:8px;padding:16px 18px}
+.card p{margin:0;color:var(--sub);font-size:.95em}
+.card .n{font-size:14px;font-weight:700;color:var(--indigo)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px;background:var(--surface)}
+.seg button{border:none;border-right:1px solid var(--line);background:transparent;padding:7px 16px;font-size:15px}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed="true"]{background:var(--indigo);color:var(--on-indigo)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.cols{grid-template-columns:1fr}}
+.pre{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:14px 16px;font-size:.9em;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.ok{color:var(--ok);font-weight:700}.ng{color:var(--ng);font-weight:700}
+.verdict{display:inline-block;font-size:13px;font-weight:700;border-radius:4px;padding:0 8px;margin-right:6px}
+.verdict.ok{background:var(--ok-soft)}.verdict.ng{background:var(--ng-soft)}
+
+/* timeline */
+.tl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tl button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:14px;line-height:1.35;text-align:left}
+.tl button b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.tl button span{color:var(--sub);font-size:12.5px}
+.tl button[aria-pressed="true"]{background:var(--indigo);border-color:var(--indigo);color:var(--on-indigo)}
+.tl button[aria-pressed="true"] span{color:inherit;opacity:.85}
+.era{display:inline-block;font-size:13px;font-weight:700;border-radius:4px;padding:0 8px;background:var(--mark-soft);margin-bottom:6px}
+.detail h3{font-size:clamp(20px,2.3vw,28px)}
+
+/* rule vs learn */
+.mails{width:100%;border-collapse:collapse;font-size:.95em}
+.mails th,.mails td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.mails th{font-size:13px;color:var(--sub);font-weight:700}
+
+/* next token */
+.gen{font-size:clamp(22px,3vw,36px);font-weight:700;margin:6px 0 14px;min-height:1.6em;overflow-wrap:anywhere}
+.gen .new{background:var(--mark-soft);border-radius:4px;padding:0 4px}
+.cands{display:grid;gap:8px;margin-bottom:12px}
+.cand{display:grid;grid-template-columns:5.5em 1fr 3.2em;gap:10px;align-items:center;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 12px;text-align:left}
+.cand:hover:not(:disabled){border-color:var(--indigo)}
+.cand:disabled{cursor:default;opacity:.55}
+.cand .w{font-weight:700}
+.cand .tr{height:14px;background:var(--indigo-soft);border-radius:3px;overflow:hidden}
+.cand .tr i{display:block;height:100%;background:var(--indigo)}
+.cand .p{text-align:right;font-variant-numeric:tabular-nums;font-size:.9em}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--indigo);background:var(--indigo);color:var(--on-indigo);border-radius:8px;padding:7px 16px;font-weight:700;font-size:15px}
+.btn.ghost{background:transparent;color:var(--indigo)}
+.result{margin-top:12px;padding:10px 14px;border-radius:8px;border-left:5px solid var(--line);background:var(--bg);min-height:3.2em}
+.result.good{background:var(--ok-soft);border-color:var(--ok)}
+.result.bad{background:var(--ng-soft);border-color:var(--ng)}
+
+/* tokens */
+.flow{display:grid;gap:10px}
+.flowrow{display:grid;grid-template-columns:7em 1fr;gap:12px;align-items:center}
+.flowrow>b{font-size:14px;color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--ink);border-radius:6px;padding:3px 10px;background:var(--surface);font-weight:700}
+.chip.id{font-family:Consolas,monospace;font-weight:400;border-color:var(--line);color:var(--sub);background:var(--bg);font-size:.9em}
+@media (max-width:620px){.flowrow{grid-template-columns:1fr;gap:4px}}
+
+/* attention */
+.sent{display:flex;flex-wrap:wrap;gap:4px 2px;font-size:clamp(20px,2.6vw,32px);font-weight:700;margin:10px 0 16px;line-height:2.2}
+.w-btn{border:none;background:transparent;border-radius:6px;padding:0 6px;font-weight:700;font-size:inherit;position:relative}
+.w-btn.pick{outline:2px solid var(--indigo);background:var(--indigo-soft)}
+.w-btn .wt{position:absolute;left:50%;top:-1.15em;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--on-indigo);background:var(--indigo);border-radius:3px;padding:0 6px;line-height:1.5;white-space:nowrap}
+
+/* stages */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.steps button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;text-align:left;border-top:4px solid var(--line)}
+.steps button b{display:block;font-size:13px;color:var(--sub)}
+.steps button[aria-pressed="true"]{border-color:var(--indigo);border-top-color:var(--indigo);background:var(--indigo-soft)}
+@media (max-width:620px){.steps{grid-template-columns:1fr}}
+
+/* hallucination */
+.bubble{border-radius:10px;padding:14px 16px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line)}
+.bubble.q{background:var(--indigo-soft);border-color:transparent}
+.bubble.ai{border-left:5px solid var(--indigo)}
+.bubble.ai.bad{border-left-color:var(--ng);background:var(--ng-soft)}
+.bubble.ai.good{border-left-color:var(--ok);background:var(--ok-soft)}
+.bubble small{display:block;color:var(--sub);font-size:13px;margin-bottom:2px}
+
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.checks li{display:grid;grid-template-columns:2.2em 1fr;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.checks li>span{font-weight:900;font-size:1.3em;color:var(--indigo);line-height:1.3}
+.checks b{display:block}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.links a{display:inline-block;background:var(--mark-soft);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;border-radius:6px;padding:4px 12px}
+.links a:hover{text-decoration:underline}
+
+
+/* simpson */
+.el{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 16px;font-weight:700}
+.el[aria-pressed="true"]{background:var(--indigo);color:var(--on-indigo);border-color:var(--indigo)}
+.el:disabled{cursor:default}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.brow{display:grid;grid-template-columns:8em 1fr;gap:6px 12px;align-items:center;margin:10px 0}
+.brow .tr{height:22px;background:var(--indigo-soft);border-radius:4px;overflow:hidden}
+.brow .tr i{display:block;height:100%;background:var(--sub);border-radius:4px}
+.brow .tr i.win{background:var(--indigo)}
+.brow .bv{grid-column:2;font-variant-numeric:tabular-nums;font-size:.95em}
+@media (max-width:620px){.brow{grid-template-columns:1fr}.brow .bv{grid-column:1}}
+input[type=range]{accent-color:var(--indigo)}
+.mails th{width:6em;white-space:nowrap}
+.steps5{grid-template-columns:repeat(5,1fr)}
+@media (max-width:820px){.steps5{grid-template-columns:1fr}}
+.checks li[role=checkbox][aria-checked=true]{border-color:var(--ok);background:var(--ok-soft)}
+.checks li[role=checkbox]:hover{border-color:var(--indigo)}
+.chart{width:100%;height:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:block}
+.chart text{fill:var(--sub);font-size:12px;font-family:inherit}
+.chart .ax{stroke:var(--sub);stroke-width:1}
+.chart .gr{stroke:var(--line);stroke-width:1}
+.chart .pt{fill:var(--indigo);stroke:var(--surface);stroke-width:1.5}
+.chart .pt.out{fill:var(--ng)}
+.chart .pt.hol{fill:transparent;stroke:var(--indigo);stroke-width:2}
+.chart .ln{stroke:var(--mark);stroke-width:3.5;stroke-linecap:round}
+.chart .ln.dash{stroke:var(--sub);stroke-width:2;stroke-dasharray:6 5}
+.chart .cv{fill:none;stroke:var(--mark);stroke-width:3.5;stroke-linejoin:round}
+.chart.fig{background:var(--surface)}
+.chart .fgsq{fill:var(--sub);fill-opacity:.22;stroke:var(--sub);stroke-width:1.5}
+.chart .fgln{stroke:var(--ink);stroke-width:5;stroke-linecap:round}
+.chart .fgrs{stroke:var(--ink);stroke-width:4}
+.chart .fgpt{fill:var(--ink)}
+.chart .fgax{stroke:var(--ink);stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chart .fgtx{fill:var(--sub);font-size:24px;font-weight:700}
+.chart .fgttl{fill:var(--ink);font-size:28px;font-weight:900}
+.chart .fgpill{fill:var(--surface);stroke:var(--ink);stroke-width:4}
+.chart .sq{fill:var(--ng);fill-opacity:.2;stroke:var(--ng);stroke-width:1}
+.chart .rs{stroke:var(--ng);stroke-width:2;opacity:.75}
+.mails th{width:6em}
+.steps-list{margin:0 0 12px;padding-left:1.2em}
+.steps-list li{margin-bottom:4px}
+.bigword{font-size:clamp(28px,5vw,56px);font-weight:900;min-height:1.6em;line-height:1.5;margin:6px 0;overflow-wrap:anywhere}
+.ta{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-top:6px}
+.poscells{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media (max-width:620px){.poscells{grid-template-columns:repeat(3,1fr)}}
+.pc{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:.9em}
+.pc b{display:block;font-size:12px;color:var(--sub)}
+.pc.ok{background:var(--ok-soft);border-color:var(--ok)}.pc.ng{background:var(--ng-soft);border-color:var(--ng)}
+.chart .cv.b{stroke:var(--sub);stroke-dasharray:8 6}
+.chart .lb{fill:var(--indigo);font-weight:700;font-size:13px}
+.btn:disabled{opacity:.4;cursor:default}
+.tblwrap{overflow-x:auto}
+.dbt{border-collapse:collapse;width:100%;font-size:.92em;background:var(--surface)}
+.dbt th,.dbt td{border:1px solid var(--line);padding:6px 10px;text-align:left;white-space:nowrap}
+.dbt thead th{background:var(--indigo-soft);font-size:13px}
+.dbt tr.types th{background:var(--mark-soft);font-weight:400;font-size:12px;color:var(--sub)}
+.dbt.whole{outline:3px solid var(--mark);outline-offset:2px}
+.dbt .hl{background:var(--mark-soft);box-shadow:inset 0 0 0 2px var(--mark)}
+.dbt tr.hlrow td{background:var(--mark-soft)}
+.dbt .bad{background:var(--ng-soft);color:var(--ng);font-weight:700}
+.btn.ghost{background:transparent}
+.dbt tr.badrow td{background:var(--ng-soft)}
+.gridt th,.gridt td{text-align:center}
+.vd{border:1px solid var(--line);border-radius:6px;min-width:3.2em;padding:4px 10px;font-weight:900;font-size:1.1em;background:var(--surface)}
+.vd.vo{background:var(--ok-soft);color:var(--ok)}
+.vd.vt{background:var(--mark-soft)}
+.vd.vx{background:var(--ng-soft);color:var(--ng)}
+.vd[aria-pressed="true"]{outline:3px solid var(--indigo);outline-offset:1px}
+.steps-list{margin:0 0 12px;padding-left:1.2em}
+.steps-list li{margin-bottom:4px}
+.stairs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:end;margin-top:6px}
+.stair{position:relative;border-radius:10px 10px 0 0;border:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.stair .ico{width:100%;max-width:130px;height:48px;color:var(--indigo);margin-bottom:4px}
+.stair .en{font-size:12px;color:var(--sub);font-weight:700}
+.stair h3{font-size:clamp(16px,1.6vw,20px);margin:0}
+.stair .what{margin:4px 0 0;font-weight:700}
+.stair .eg{margin:6px 0 0;font-size:.85em;color:var(--sub)}
+.stair.s1{min-height:200px;background:var(--surface);border-top:5px solid var(--line)}
+.stair.s2{min-height:240px;background:var(--indigo-soft);border-top:5px solid var(--indigo)}
+.stair.s3{min-height:280px;background:var(--indigo);color:var(--on-indigo);border-color:var(--indigo)}
+.stair.s3 .ico,.stair.s3 .en,.stair.s3 .eg{color:var(--on-indigo)}
+.stair.s3 .en,.stair.s3 .eg{opacity:.9}
+.stair.s4{min-height:320px;background:var(--mark-soft);border:3px solid var(--mark)}
+.stair .goal{position:absolute;top:-13px;right:10px;background:var(--mark);color:#1f2328;font-size:12px;font-weight:900;border-radius:999px;padding:1px 12px}
+.scope{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;text-align:center;font-weight:700;font-size:.85em;color:var(--sub);border-top:3px solid var(--indigo);padding-top:4px}
+.scopeNote{text-align:center;font-size:13px;color:var(--sub);margin:2px 0 0}
+@media (max-width:820px){.stairs{grid-template-columns:1fr}.stair{min-height:0!important;border-radius:10px}.scope{display:none}.scopeNote{display:none}}
+.cpts{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.cpt{border:1.5px solid var(--line);border-radius:999px;padding:2px 12px;font-weight:700;font-size:.9em;color:var(--sub)}
+.cpt.on{background:var(--mark);border-color:var(--mark);color:#1f2328}
+.agentlog{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
+.agentlog li{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg)}
+.agentlog li.now{border-color:var(--indigo);background:var(--indigo-soft)}
+.agentlog li b{margin-right:8px}
+.agentlog .tg{font-size:12px;font-weight:700;background:var(--mark);color:#1f2328;border-radius:999px;padding:0 8px}
+.agentlog li div{font-size:.92em;color:var(--sub);margin-top:2px}
+.nest{display:flex}
+.nest .layer{flex:1;border:2px solid var(--line);border-radius:12px;padding:8px;margin:0;background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.nest .l0{background:var(--surface)}
+.nest .l1{background:var(--indigo-soft)}
+.nest .l2{background:var(--surface)}
+.nest .l3{background:var(--indigo-soft)}
+.nest .l4{background:var(--mark-soft);border-color:var(--mark)}
+.nest .nl{cursor:pointer;border-radius:8px;padding:4px 8px;line-height:1.4;border:1.5px solid transparent}
+.nest .nl b{display:block}
+.nest .nl span{font-size:12px;color:var(--sub)}
+.nest .nl:hover{border-color:var(--indigo)}
+.nest .nl[aria-pressed="true"]{background:var(--indigo);color:var(--on-indigo);border-color:var(--indigo)}
+.nest .nl[aria-pressed="true"] span{color:var(--on-indigo);opacity:.9}
+.flowrow2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 14px}
+.flowrow2 span{border:1.5px solid var(--ink);border-radius:8px;padding:4px 12px;font-weight:700;background:var(--surface)}
+.flowrow2 i{font-style:normal;color:var(--sub)}
+body{word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
+h1,h2,h3,.sub,.def{text-wrap:balance}
+p,li,td,.pre{text-wrap:pretty}
+</style>
+</head>
+<body>
+<div class="deck">
+<div class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide cover" data-title="CRM・SFA・ERP・AIで学ぶ　DXとAX">
+ <div class="inner">
+  <h1>CRM・SFA・ERP・AIで学ぶ<br>DXとAX</h1>
+  <p class="sub">1つの案件を追いかけて、仕事の変わり方を知る</p>
+  <div class="rule"></div>
+  <p>DXやAXは、「難しいIT用語」ではなく、「仕事のやり方が変わること」です。架空の1つの案件を追いかけながら、4つの道具（CRM・SFA・ERP・AI）の役割と、つながりを、やさしく整理します。デジタルの知識が少なくても、読めるように作っています。</p>
+  <p class="note">本ページの会社名・お客様・数字は、説明のための架空の例です。</p>
+  <p class="org">船井総合研究所 AIソリューション開発室</p>
+ </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="今回の主人公：みらい設備とA工場（架空）">
+ <div class="inner">
+  <span class="tag">序章</span>
+  <h2>今回の主人公：「みらい設備」と「A工場」（架空）</h2>
+  <p class="def">設備メンテナンスの会社「みらい設備」が、新しいお客様「A工場」と出会い、提案・受注・納品・請求まで進めます。この1つの案件を、5つの場面で追いかけます。</p>
+  <div class="steps steps5" id="acts" role="group" aria-label="5つの場面"></div>
+  <div class="panel" id="actsBody" aria-live="polite"></div>
+  <p class="note">会社名、お客様、金額は、すべて架空です。</p>
+ </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="全体図：4つの段階を1枚で見る">
+ <div class="inner">
+  <span class="tag">序章　DXとAX 1</span>
+  <h2>4つの段階を、1枚で見る</h2>
+  <p class="def">デジタイゼーション、デジタライゼーション、DX、AX。階段のように、「変わる範囲」が広がっていきます。</p>
+  <div class="stairs" role="img" aria-label="デジタイゼーションからAXまで、変わる範囲が広がる4段の階段の図">
+   <div class="stair s1">
+    <svg class="ico" viewBox="0 0 120 48" aria-hidden="true"><rect x="6" y="6" width="28" height="36" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 16h16M12 23h16M12 30h10" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M46 24h28M66 16l8 8-8 8" stroke="currentColor" stroke-width="2.5" fill="none"/><rect x="84" y="8" width="30" height="32" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M84 19h30M84 29h30M97 8v32" stroke="currentColor" stroke-width="2"/></svg>
+    <div class="en">Digitization</div>
+    <h3>デジタイゼーション</h3>
+    <p class="what">アナログを<b>データに</b></p>
+    <p class="eg">例：紙の書類をPDFにする</p>
+   </div>
+   <div class="stair s2">
+    <svg class="ico" viewBox="0 0 120 48" aria-hidden="true"><circle cx="16" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="60" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="104" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M28 24h20M40 18l8 6-8 6M72 24h20M84 18l8 6-8 6" stroke="currentColor" stroke-width="2.5" fill="none"/></svg>
+    <div class="en">Digitalization</div>
+    <h3>デジタライゼーション</h3>
+    <p class="what">業務の流れを<b>効率化</b></p>
+    <p class="eg">例：申請をオンラインで回す</p>
+   </div>
+   <div class="stair s3">
+    <svg class="ico" viewBox="0 0 120 48" aria-hidden="true"><path d="M10 42V28M30 42V20M50 42V24M70 42V12M90 42V6" stroke="currentColor" stroke-width="7" fill="none"/><path d="M8 30l22-12 20 6 20-14 22-6" stroke="currentColor" stroke-width="2.5" fill="none"/></svg>
+    <div class="en">Digital Transformation</div>
+    <h3>DX</h3>
+    <p class="what">ビジネス・組織を<b>変革</b></p>
+    <p class="eg">例：データで売り方・働き方を変える</p>
+   </div>
+   <div class="stair s4">
+    <svg class="ico" viewBox="0 0 120 48" aria-hidden="true"><circle cx="30" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2.5"/><text x="30" y="32" text-anchor="middle" font-size="22" font-weight="900" fill="currentColor">AI</text><path d="M56 24h22M70 16l8 8-8 8" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="98" cy="14" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M84 42c0-12 28-12 28 0" stroke="currentColor" stroke-width="2.5" fill="none"/></svg>
+    <div class="en">AI Transformation</div>
+    <h3>AX</h3>
+    <p class="what">AIを前提に<b>作り直す</b></p>
+    <p class="eg">例：AIが下ごしらえ、人が判断</p>
+    <span class="goal">目指す姿</span>
+   </div>
+  </div>
+  <div class="scope" aria-hidden="true"><span>情報</span><span>業務</span><span>ビジネス・組織</span><span>仕事の進め方全体</span></div>
+  <p class="scopeNote">↑ 変わる範囲が、左から右へ広がる</p>
+  <p class="note">段階は、必ず順番に進むとは限りません。AXの定義は、会社や文脈によって異なります。ここでは「AIを前提に、業務や意思決定、組織を作り直すこと」として説明します。</p>
+ </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="4つの道具の地図">
+ <div class="inner">
+  <span class="tag">序章　DXとAX 2</span>
+  <h2>4つの道具の地図：CRM・SFA・ERP・AI</h2>
+  <p class="def">この教材で扱う4つの道具です。「何を扱うか」と「どの段階の話か」を、先に地図で見ておきましょう。</p>
+  <div class="tblwrap"><table class="dbt" id="mapTbl"></table></div>
+  <p class="note">どの道具も、「入れたら終わり」ではありません。使い方と、人の確認の仕方まで含めて、仕事の変わり方が決まります。</p>
+ </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="第1幕：お客様と出会う（場面）">
+ <div class="inner">
+  <span class="tag">第1幕　CRM 1</span>
+  <h2>第1幕：お客様と出会う</h2>
+  <p class="def">A工場から、問い合わせの電話が入りました。ところが、この会社には、A工場について知っている人が、あちこちにいます。人を選んで、誰が何を知っているか、見てみましょう。（架空）</p>
+  <div class="steps" id="who" role="group" aria-label="人"></div>
+  <div class="panel" id="whoBody" aria-live="polite"></div>
+  <p class="msg">A工場の情報は、<mark>人の頭と紙に、散らばっている</mark>。</p>
+ </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="体験：情報がバラバラな場合と、まとまった場合">
+ <div class="inner">
+  <span class="tag">第1幕　CRM 2</span>
+  <h2>体験：バラバラな場合と、まとまった場合</h2>
+  <p class="def">「A工場の担当者が替わっていた」ことを、誰かが知っていたとします。その情報は、他の人に届くでしょうか。切り替えて比べましょう。</p>
+  <div class="seg" id="segCrm" role="group" aria-label="状態">
+   <button type="button" data-c="0" aria-pressed="true">情報がバラバラ（紙・個人のメモ）</button>
+   <button type="button" data-c="1" aria-pressed="false">情報が1か所に集まっている</button>
+  </div>
+  <div class="cols">
+   <div class="panel"><h3>見積を作る人（新人）が見える情報</h3><div class="pre" id="crmView"></div></div>
+   <div class="panel"><h3>起きること</h3><div class="pre" id="crmWhat"></div></div>
+  </div>
+  <div class="result" id="crmRes" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="CRMとは：お客様の情報を、1か所に集める">
+ <div class="inner">
+  <span class="tag">第1幕　CRM 3</span>
+  <h2>CRMとは：お客様の情報を、1か所に集める</h2>
+  <p class="def">CRM（Customer Relationship Management：顧客関係管理）は、お客様の情報とやりとりの履歴を、1か所に集めて、全員が見られるようにする仕組みです。項目を選んで確認しましょう。</p>
+  <div class="steps" id="crm" role="group" aria-label="CRM"></div>
+  <div class="panel" id="crmBody" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="CRMと、若手の仕事とのつながり">
+ <div class="inner">
+  <span class="tag">第1幕　CRM 4</span>
+  <h2>CRMと、あなたの仕事とのつながり</h2>
+  <p class="def">CRMは、使う人が入力して、はじめて価値が出ます。何を入力し、それがなぜ大切かを、整理します。</p>
+  <div class="tblwrap"><table class="dbt" id="crmTbl"></table></div>
+  <p class="msg">入力は、自分のためだけでなく、<mark>次に対応する人のため</mark>。</p>
+ </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="第2幕：商談を進める（場面）">
+ <div class="inner">
+  <span class="tag">第2幕　SFA 1</span>
+  <h2>第2幕：商談を進める</h2>
+  <p class="def">A工場への提案と見積が始まりました。上司に「あの案件、今どうなってる？」と聞かれたとき、答えるのに、何が必要でしょうか。</p>
+  <div class="cols">
+   <div class="panel"><h3>SFAがないと</h3><ul style="margin:0;padding-left:1.3em"><li>担当者に、1件ずつ聞いて回る。</li><li>進み具合が、人によってバラバラに伝わる。</li><li>月末に、あわてて集計する。</li></ul></div>
+   <div class="panel"><h3>SFAがあると</h3><ul style="margin:0;padding-left:1.3em"><li>画面で、全案件の進み具合が見える。</li><li>止まっている案件に、早く気づける。</li><li>集計は、自動で出る。</li></ul></div>
+  </div>
+  <p class="msg">営業の動きが、<mark>見える</mark>と、手を打てる。</p>
+ </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="SFAとは：商談の動きを、記録して共有する">
+ <div class="inner">
+  <span class="tag">第2幕　SFA 2</span>
+  <h2>SFAとは、CRMとの違い</h2>
+  <p class="def">SFA（Sales Force Automation：営業支援）は、商談の進み具合や、営業活動を記録して、共有する仕組みです。CRMとは、見ているものが違います。観点を選んで確認しましょう。</p>
+  <div class="steps" id="sfa" role="group" aria-label="SFA"></div>
+  <div class="panel" id="sfaBody" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="体験：商談の段階を動かして、見える化する">
+ <div class="inner">
+  <span class="tag">第2幕　SFA 3</span>
+  <h2>体験：商談の段階を動かして、見える化する</h2>
+  <p class="def">3つの案件（架空）の「いまの段階」を選んでみましょう。段階ごとの案件数と、受注の見込み額が、自動で出ます。</p>
+  <div class="tblwrap"><table class="dbt" id="dealTbl"></table></div>
+  <div class="cols" style="margin-top:12px">
+   <div class="panel"><h3>段階ごとの案件</h3><div id="dealBars"></div></div>
+   <div class="panel"><h3>受注の見込み額（目安）</h3><div class="pre" id="dealSum"></div></div>
+  </div>
+  <p class="note">見込み額は、「金額 × 受注の確度（段階ごとの目安の割合）」で計算しています。確度は説明用の架空の値です。</p>
+ </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="日報・報告が、どう変わるか">
+ <div class="inner">
+  <span class="tag">第2幕　SFA 4</span>
+  <h2>日報・報告が、どう変わるか</h2>
+  <p class="def">SFAは、「報告のための作業」を減らして、「次の一手を考える時間」を増やすために使います。</p>
+  <div class="cols">
+   <div class="panel"><h3>これまで</h3><ul style="margin:0;padding-left:1.3em"><li>日報を、書いて提出する。</li><li>集計は、管理職が、手作業で行う。</li><li>報告のために、時間を取られる。</li></ul></div>
+   <div class="panel"><h3>SFAを使うと</h3><ul style="margin:0;padding-left:1.3em"><li>活動と商談の進み具合を、その場で入力する。</li><li>集計は、自動で出る。</li><li>空いた時間を、お客様との対話や、提案に使える。</li></ul></div>
+  </div>
+  <p class="msg">目的は、<mark>管理されること</mark>ではなく、<mark>動きを速くすること</mark>。</p>
+ </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="第3幕：受注して、納品・請求する（場面）">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 1</span>
+  <h2>第3幕：受注して、納品・請求する</h2>
+  <p class="def">A工場から、点検10台分の注文が入りました。ここから、会社の中では、たくさんの部署の仕事が、連鎖して動き出します。</p>
+  <div class="flowrow2" aria-label="注文から売上までの流れ"><span>受注</span><i>→</i><span>在庫・手配</span><i>→</i><span>出荷・作業</span><i>→</i><span>請求</span><i>→</i><span>入金</span><i>→</i><span>売上・会計</span></div>
+  <div class="cols">
+   <div class="panel"><h3>部署ごとに、別々の表で管理していると</h3><p style="margin:0">受注は営業、在庫は倉庫、請求は経理…と、別の表に、同じ数字を、何度も入力する。転記のミスや、確認の手間が、増える。</p></div>
+   <div class="panel"><h3>ERPでつなぐと</h3><p style="margin:0">「受注」を1回入力すれば、在庫・出荷・請求・会計に、情報が流れる。同じ数字を、何度も打たなくてよい。</p></div>
+  </div>
+ </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="ERPとは：お金・モノ・人の情報をつなぐ">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 2</span>
+  <h2>ERPとは：お金・モノ・人の情報を、つなぐ</h2>
+  <p class="def">ERP（Enterprise Resource Planning：基幹業務システム）は、受注・在庫・購買・会計・人事など、会社の基本の仕事を、1つの仕組みでつなげて管理するものです。項目を選んで確認しましょう。</p>
+  <div class="steps" id="erp" role="group" aria-label="ERP"></div>
+  <div class="panel" id="erpBody" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="体験：1件の注文が、会社の中を流れる">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 3</span>
+  <h2>体験：1件の注文が、会社の中を流れる</h2>
+  <p class="def">「次へ進める」を押して、A工場の注文（架空）が、会社の中を流れる様子を追いましょう。</p>
+  <div class="panel">
+   <div class="cpts" id="ordChips" aria-hidden="true"></div>
+   <ol class="agentlog" id="ordLog" aria-live="polite"></ol>
+   <div class="row-btns"><button class="btn" id="ordNext" type="button">次へ進める</button><button class="btn ghost" id="ordReset" type="button">最初から</button></div>
+  </div>
+  <div class="result" id="ordRes" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="体験：入力ミスが、どこまで広がるか">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 4</span>
+  <h2>体験：入力ミスが、どこまで広がるか</h2>
+  <p class="def">受注の「台数」を、10台のところ、100台と打ち間違えたとします。手作業と、ERPで、何が起きるか比べましょう。</p>
+  <div class="seg" id="segEr" role="group" aria-label="方式">
+   <button type="button" data-e="0" aria-pressed="true">部署ごとに別々の表（手作業）</button>
+   <button type="button" data-e="1" aria-pressed="false">ERP（1か所の入力が全体に流れる）</button>
+  </div>
+  <div class="tblwrap"><table class="dbt" id="erTbl"></table></div>
+  <div class="result" id="erRes" aria-live="polite" style="margin-top:12px"></div>
+ </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="マスタとトランザクション：データの基本">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 5</span>
+  <h2>マスタとトランザクション：データの基本</h2>
+  <p class="def">ERPのデータは、大きく2種類に分けて考えます。「あまり変わらない基本の情報」と、「日々の出来事の記録」です。</p>
+  <div class="cols">
+   <div class="panel"><h3>マスタ（基本の情報）</h3><p>お客様、商品、取引先、社員など。<br>例：A工場の会社名・住所・支払条件</p><p class="note" style="margin:0">1か所で管理して、あちこちで使い回す。</p></div>
+   <div class="panel"><h3>トランザクション（出来事の記録）</h3><p>注文、出荷、請求、入金など。<br>例：A工場から、10台の注文（11月28日）</p><p class="note" style="margin:0">日々、増えていく。マスタを参照して記録する。</p></div>
+  </div>
+  <p class="msg">マスタが間違っていると、<mark>すべての記録に、間違いが広がる</mark>。</p>
+  <p class="note">詳しくは：<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/database-basics/">データベースの基礎知識</a></p>
+ </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="入力ミス・入力漏れが、会社に与える影響">
+ <div class="inner">
+  <span class="tag">第3幕　ERP 6</span>
+  <h2>入力ミス・入力漏れが、会社に与える影響</h2>
+  <p class="def">道具がつながるほど、1つの入力が、多くの場所に影響します。場面を選んで確認しましょう。</p>
+  <div class="steps" id="impact" role="group" aria-label="影響"></div>
+  <div class="panel" id="impactBody" aria-live="polite"></div>
+ </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="第4幕：そのすべてに、AIが加わると">
+ <div class="inner">
+  <span class="tag">第4幕　AI 1</span>
+  <h2>第4幕：そのすべてに、AIが加わると</h2>
+  <p class="def">生成AI（ChatGPTやClaudeのような、文章を作るAI）は、CRM・SFA・ERPに集まった情報を、読み、整理し、下書きを作ることができます。ただし、得意と苦手があります。</p>
+  <div class="cols">
+   <div class="panel"><h3>得意なこと</h3><ul style="margin:0;padding-left:1.3em"><li>長い文章の要約</li><li>メールや報告書の下書き</li><li>情報の整理、言い換え、翻訳</li></ul></div>
+   <div class="panel"><h3>苦手なこと・注意</h3><ul style="margin:0;padding-left:1.3em"><li>もっともらしい間違い（ハルシネーション）</li><li>数字の計算、最新・社内の情報</li><li>責任を持つこと（最終判断は人）</li></ul></div>
+  </div>
+  <p class="note">詳しくは：<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/ai-history-llm/">AIの歴史とLLM</a>、<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/ai-does-not-calculate/">生成AIは「計算」していない？</a></p>
+ </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="3つの道具 × AI：できることと、人の確認">
+ <div class="inner">
+  <span class="tag">第4幕　AI 2</span>
+  <h2>3つの道具 × AI：できることと、人の確認</h2>
+  <p class="def">CRM・SFA・ERPのそれぞれで、AIに任せられること（例）と、人が確認することです。</p>
+  <div class="tblwrap"><table class="dbt" id="aiTbl"></table></div>
+  <p class="msg">AIは<mark>下ごしらえ</mark>。最終判断は<mark>人</mark>。</p>
+ </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="AIを使うときの注意">
+ <div class="inner">
+  <span class="tag">第4幕　AI 3</span>
+  <h2>AIを使うときの注意</h2>
+  <p class="def">お客様の情報や、会社の数字を扱うからこそ、守ることがあります。項目を選んで確認しましょう。</p>
+  <div class="steps" id="care" role="group" aria-label="注意"></div>
+  <div class="panel" id="careBody" aria-live="polite"></div>
+  <p class="note">詳しくは：<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/ai-security-prelearning/">AIセキュリティ事前学習</a>、<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/ai-security/">生成AIを止めないためのセキュリティ</a></p>
+ </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="体験：AIの答えを疑う（直感を確かめる）">
+ <div class="inner">
+  <span class="tag">第4幕　AI 4</span>
+  <h2>体験：「すぐ浮かぶ答え」を、確かめる</h2>
+  <p class="def">AIの答えは、すらすらと自信ありげに出てきます。人間の「直感の答え」と、似ています。次の問題を、直感で答えてから、「答えを見る」を押しましょう。（数字は架空）</p>
+  <div class="panel"><p style="margin:0;font-size:1.1em">A工場への見積の金額が、AIの案で<b>20%値引き</b>されたあと、さらに<b>10%値上げ</b>されました。元の金額に戻りましたか？</p></div>
+  <div class="row-btns" style="margin-top:12px"><button class="btn" id="chkBtn" type="button">答えを見る</button></div>
+  <div class="result" id="chkRes" aria-live="polite"></div>
+  <p class="note">詳しくは：<a target="_blank" rel="noopener" href="https://funai-yuji-yoshida.github.io/ai-slides/slides/crt-reflection/">認知反射テスト（CRT）</a></p>
+ </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="終幕：4つの道具を、1本の流れでつなぐ">
+ <div class="inner">
+  <span class="tag">終幕　AXへ 1</span>
+  <h2>終幕：4つの道具を、1本の流れでつなぐ</h2>
+  <p class="def">A工場の案件を、もう一度、通して見てみましょう。道具がつながると、「情報が流れ、AIが下ごしらえをし、人が判断する」流れになります。</p>
+  <div class="tblwrap"><table class="dbt" id="flowTbl"></table></div>
+  <p class="msg">道具をつなぐと、<mark>人は、考える仕事に集中できる</mark>。</p>
+ </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="DXとAXの違い：道具を入れる、から作り直すへ">
+ <div class="inner">
+  <span class="tag">終幕　AXへ 2</span>
+  <h2>DXとAXの違い：「道具を入れる」から「作り直す」へ</h2>
+  <p class="def">CRM・SFA・ERPを入れて、情報がつながる段階が、DXの土台です。その上に、AIを前提として、仕事のやり方を作り直す段階が、AXです。</p>
+  <div class="cols">
+   <div class="panel"><h3>DX：データでつなぐ</h3><ul style="margin:0;padding-left:1.3em"><li>情報が、1か所に集まり、つながる。</li><li>データをもとに、判断・改善する。</li><li>主役は、データと、道具。</li></ul></div>
+   <div class="panel"><h3>AX：AIを前提に、作り直す</h3><ul style="margin:0;padding-left:1.3em"><li>AIが、下ごしらえ・提案をする。</li><li>人は、確認・判断・対話に集中する。</li><li>主役は、人と、AIの役割分担。</li></ul></div>
+  </div>
+  <p class="msg">データの土台がないと、<mark>AIは、力を出せない</mark>。</p>
+ </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="自分の仕事に当てはめる">
+ <div class="inner">
+  <span class="tag">終幕　AXへ 3</span>
+  <h2>自分の仕事に、当てはめてみる</h2>
+  <p class="def">学んだことを、自分の仕事に引き寄せて、考えてみましょう。クリックして、考えたものにチェックを入れてください。</p>
+  <ul class="checks" id="think"></ul>
+  <div class="result" id="thinkRes" aria-live="polite" style="margin-top:12px"></div>
+ </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="まとめ">
+ <div class="inner">
+  <span class="tag">まとめ</span>
+  <h2>まとめ</h2>
+  <ul class="checks">
+   <li><span>1</span><div><b>DXとAXは、「仕事のやり方が変わること」</b>道具を入れることが、目的ではない。</div></li>
+   <li><span>2</span><div><b>CRMは「お客様の情報」を1か所に</b>入力は、次に対応する人のため。</div></li>
+   <li><span>3</span><div><b>SFAは「商談の動き」を見える化</b>動きが見えると、手が打てる。</div></li>
+   <li><span>4</span><div><b>ERPは「お金・モノ・人」をつなぐ</b>つながる分、入力ミスの影響も大きい。マスタを大切に。</div></li>
+   <li><span>5</span><div><b>AIは、下ごしらえ。判断は人</b>間違い・情報の取り扱いに、気をつける。</div></li>
+   <li><span>6</span><div><b>AXは、データの土台の上に、AIで作り直す</b>小さく始めて、確認しながら広げる。</div></li>
+  </ul>
+  <p class="msg">まず、<mark>自分の仕事の入力から</mark>、変えていく。</p>
+  <p class="note">本ページの会社名・お客様・数字は、説明のための架空の例です。</p>
+ </div>
+</section>
+
+<div class="toc" id="toc"><h2>目次</h2><ol id="tocList"></ol></div>
+</div>
+
+<nav class="bar" aria-label="スライド操作">
+ <a class="navbtn" href="../index.html" style="text-decoration:none;color:inherit">← Home</a>
+ <button class="navbtn" id="tocBtn" aria-expanded="false">目次</button>
+ <button class="navbtn" id="prev" aria-label="前のスライド">←<span class="hide-sm"> 前へ</span></button>
+ <div class="progress"><span id="prog"></span></div>
+ <span class="count" id="count"></span>
+ <button class="navbtn" id="next" aria-label="次のスライド"><span class="hide-sm">次へ </span>→</button>
+</nav>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const slides=[...document.querySelectorAll('.slide')];
+  const prevB=$('prev'),nextB=$('next'),prog=$('prog'),count=$('count');
+  const toc=$('toc'),tocBtn=$('tocBtn'),tocList=$('tocList');
+  let cur=0;
+  function show(i){
+    i=Math.max(0,Math.min(slides.length-1,i));
+    slides[cur].classList.remove('active');
+    cur=i;slides[cur].classList.add('active');slides[cur].scrollTop=0;
+    prevB.disabled=cur===0;nextB.disabled=cur===slides.length-1;
+    prog.style.width=((cur+1)/slides.length*100)+'%';
+    count.textContent=(cur+1)+' / '+slides.length;
+    try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+  }
+  prevB.onclick=()=>show(cur-1);nextB.onclick=()=>show(cur+1);
+  slides.forEach((s,i)=>{const li=document.createElement('li'),b=document.createElement('button'),n=document.createElement('span');
+    n.textContent=i+1;b.appendChild(n);b.appendChild(document.createTextNode(s.dataset.title));
+    b.onclick=()=>{closeToc();show(i)};li.appendChild(b);tocList.appendChild(li);});
+  function closeToc(){toc.classList.remove('open');tocBtn.setAttribute('aria-expanded','false')}
+  tocBtn.onclick=()=>{const o=toc.classList.toggle('open');tocBtn.setAttribute('aria-expanded',o)};
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    if(e.key==='Escape'){closeToc();return}
+    if(['ArrowRight','PageDown'].includes(e.key)){e.preventDefault();show(cur+1)}
+    else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(cur-1)}
+    else if(e.key===' '&&e.target.tagName!=='BUTTON'&&e.target.tagName!=='A'){e.preventDefault();show(e.shiftKey?cur-1:cur+1)}
+    else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1);
+  });
+  let sx=null,sy=null;const stage=$('stage');
+  stage.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+  stage.addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5&&!toc.classList.contains('open'))show(dx<0?cur+1:cur-1);sx=null},{passive:true});
+
+  function res(el,cls,text){el.className='result'+(cls?' '+cls:'');el.textContent=text;}
+  function seg(el,fn){const bs=[...el.querySelectorAll('button')];
+    bs.forEach(b=>b.addEventListener('click',()=>{bs.forEach(x=>x.setAttribute('aria-pressed',x===b));fn(b)}));}
+  function btnList(box,items,label,sub,fn){
+    items.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed','false');
+      b.innerHTML='<b></b><span></span>';b.querySelector('b').textContent=label(x,i);b.querySelector('span').textContent=sub(x,i);
+      b.onclick=()=>{[...box.children].forEach(c=>c.setAttribute('aria-pressed',c===b));fn(x,i)};box.appendChild(b);});
+    box.children[0].click();
+  }
+  function rows(box,pairs){box.innerHTML='<table class="mails"><tbody></tbody></table>';const tb=box.querySelector('tbody');
+    pairs.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML='<th></th><td></td>';tr.children[0].textContent=r[0];tr.children[1].textContent=r[1];tb.appendChild(tr);});}
+
+  function tbl(el,cols,rowsData,opt){opt=opt||{};el.innerHTML='';
+    const th=document.createElement('thead'),trh=document.createElement('tr');
+    cols.forEach(c=>{const t=document.createElement('th');t.textContent=c;trh.appendChild(t)});th.appendChild(trh);el.appendChild(th);
+    const tb=document.createElement('tbody');
+    rowsData.forEach((r,ri)=>{const tr=document.createElement('tr');if(opt.rowCls&&opt.rowCls(ri))tr.className=opt.rowCls(ri);
+      r.forEach((v,ci)=>{const td=document.createElement('td');if(v instanceof Node)td.appendChild(v);else td.textContent=v;if(opt.cellCls&&opt.cellCls(ri,ci))td.className=opt.cellCls(ri,ci);tr.appendChild(td)});tb.appendChild(tr)});el.appendChild(tb)}
+
+  /* ---- 2: five acts ---- */
+  const ACTS=[
+    {t:'序章',s:'DXとAX',r:[['内容','デジタル化の4つの段階と、4つの道具の地図。'],['ねらい','DXとAXを、「仕事のやり方が変わること」として理解する。']]},
+    {t:'第1幕',s:'お客様と出会う',r:[['場面','A工場から、問い合わせの電話。'],['道具','CRM（顧客関係管理）'],['ポイント','お客様の情報を、1か所に集める。']]},
+    {t:'第2幕',s:'商談を進める',r:[['場面','提案と見積。案件の進み具合を、全員で共有する。'],['道具','SFA（営業支援）'],['ポイント','営業の動きを、見える化する。']]},
+    {t:'第3幕',s:'受注して、納品・請求',r:[['場面','注文が入り、在庫・出荷・請求・売上が動く。'],['道具','ERP（基幹業務システム）'],['ポイント','お金・モノ・人の情報を、つなぐ。']]},
+    {t:'第4幕・終幕',s:'AIが加わり、AXへ',r:[['場面','すべての場面に、AIが加わる。'],['道具','AI（生成AI）'],['ポイント','AIが下ごしらえし、人が判断する。データの土台の上に、仕事を作り直す。']]}
+  ];
+  const actb=$('actsBody');
+  btnList($('acts'),ACTS,x=>x.t,x=>x.s,x=>{rows(actb,x.r);});
+
+  /* ---- 4: map ---- */
+  tbl($('mapTbl'),['道具','一言で','主に扱うもの','近い段階'],[
+    ['CRM','お客様の情報を、1か所に集める','お客様の情報、やりとりの履歴','デジタライゼーション〜DX'],
+    ['SFA','営業の動きを、見える化する','商談の進み具合、営業活動','デジタライゼーション〜DX'],
+    ['ERP','お金・モノ・人を、つなぐ','受注・在庫・請求・会計など','DXの土台'],
+    ['AI','下ごしらえを、手伝う','文章・情報の整理、要約、予測','AX']],{});
+
+  /* ---- 5: who knows ---- */
+  const WH=[
+    {t:'営業の山田さん',s:'電話を受けた',r:[['知っていること','問い合わせの内容（設備の点検を、検討中）'],['どこに','自分のメモ帳']]},
+    {t:'事務の佐藤さん',s:'名刺を受け取った',r:[['知っていること','会社の住所と、担当者の名前（古い名刺）'],['どこに','机の引き出しの、名刺入れ']]},
+    {t:'技術の鈴木さん',s:'以前、現場を見た',r:[['知っていること','A工場の設備の状況と、現場の写真'],['どこに','自分のパソコンのフォルダ']]},
+    {t:'前任の田中さん',s:'担当だった',r:[['知っていること','A工場の担当者が、先月、交代したこと。過去の失注の理由'],['どこに','田中さんの頭の中']]}
+  ];
+  const whb=$('whoBody');
+  btnList($('who'),WH,x=>x.t,x=>x.s,x=>{rows(whb,x.r);});
+
+  /* ---- 6: crm toggle ---- */
+  function showCrm(k){
+    $('crmView').textContent=k?'A工場\n担当：中村様（11/20 更新）\n問い合わせ：設備の点検を検討中（山田・11/28）\n過去：昨年、失注（価格が理由・田中）\n現場の状況：写真あり（鈴木）':'A工場\n担当：伊藤様（古い名刺のまま）\n（問い合わせの内容は、山田さんのメモの中）\n（担当者の交代は、田中さんの頭の中）\n（現場の写真は、鈴木さんのパソコンの中）';
+    $('crmWhat').textContent=k?'新人は、画面を見るだけで、最新の担当者（中村様）と、これまでの経緯が分かる。\n過去に、価格で失注した理由も見えるので、提案の工夫ができる。':'新人は、古い名刺の「伊藤様」あてに、見積を送ってしまう。\n担当者の交代を知っていたのは、別の人だけ。気づくのは、返事が来ないときになる。';
+    res($('crmRes'),k?'good':'bad',k?'情報が1か所にあれば、誰が対応しても、同じ情報から始められます。':'情報が散らばっていると、知っている人しか動けず、引き継ぎやミスのもとになります。');
+  }
+  seg($('segCrm'),b=>showCrm(+b.dataset.c));showCrm(0);
+
+  /* ---- 7: CRM steps ---- */
+  const CR=[
+    {t:'何を集める？',r:[['集める情報','会社名、担当者、連絡先、問い合わせの履歴、過去の取引、メモ。'],['ポイント','「誰が」「いつ」「何を話したか」を、残す。']]},
+    {t:'何が変わる？',r:[['これまで','情報は、人の頭・紙・個人のパソコンの中。'],['CRMを使うと','全員が、同じ最新の情報を、見られる。担当が替わっても、引き継ぎやすい。']]},
+    {t:'日々の例',r:[['例','電話のあと、5分で、やりとりの内容を入力する。'],['効果','次に電話に出た人が、前回の話を、ふまえて対応できる。']]},
+    {t:'よくある誤解',r:[['誤解1','「名刺の管理ソフトでしょ？」→ 名刺は一部。やりとりの履歴まで残すのが、本来の価値。'],['誤解2','「入れれば、勝手に売れる」→ 入力と活用が、セット。']]}
+  ];
+  const crb=$('crmBody');
+  btnList($('crm'),CR,(x,i)=>'項目 '+(i+1),x=>x.t,x=>{rows(crb,x.r);});
+
+  /* ---- 8: crm tbl ---- */
+  tbl($('crmTbl'),['あなたが入力するもの','なぜ大切か（誰の役に立つか）'],[
+    ['問い合わせの内容','次に対応する人が、同じことを、お客様に聞き直さなくて済む。'],
+    ['担当者の変更','見積や連絡を、正しい相手に送れる。'],
+    ['お客様の要望・困りごと','提案を、お客様に合わせて作れる。'],
+    ['やりとりの日付','「いつ連絡するか」を、忘れずにいられる。']],{});
+
+  /* ---- 10: SFA steps ---- */
+  const SF=[
+    {t:'SFAとは',r:[['何か','商談の進み具合（段階）や、営業の活動を、記録して共有する仕組み。'],['一言で','営業の動きを、見える化する。']]},
+    {t:'CRMとの違い',r:[['CRM','見ているもの＝「お客様」。誰で、どんなやりとりをしたか。'],['SFA','見ているもの＝「商談（案件）」。いま、どの段階で、いくらの見込みか。']]},
+    {t:'何が変わる？',r:[['これまで','進み具合は、担当者に聞かないと、分からない。'],['SFAを使うと','全案件の段階が、画面で見える。止まっている案件に、早く気づける。']]},
+    {t:'よくある誤解',r:[['誤解1','「監視されるための道具」→ 本来は、手を打つ、手助けをするため。'],['誤解2','「入力が増えて面倒」→ 報告や集計が減ることと、セットで考える。']]}
+  ];
+  const sfb=$('sfaBody');
+  btnList($('sfa'),SF,(x,i)=>'項目 '+(i+1),x=>x.t,x=>{rows(sfb,x.r);});
+
+  /* ---- 11: pipeline ---- */
+  const STG=['見込み','提案','見積','交渉','受注'],PRB=[10,30,50,70,100];
+  const DEALS=[{n:'A工場　点検契約',amt:300,st:1},{n:'B商事　改修工事',amt:800,st:2},{n:'C病院　保守更新',amt:500,st:3}];
+  function drawDeals(){
+    const rowsD=DEALS.map((d,i)=>{const sel=document.createElement('select');sel.className='inp';sel.style.width='auto';sel.setAttribute('aria-label',d.n+'の段階');
+      STG.forEach((s,k)=>{const o=document.createElement('option');o.value=k;o.textContent=s+'（確度 '+PRB[k]+'%）';if(k===d.st)o.selected=true;sel.appendChild(o)});
+      sel.onchange=()=>{d.st=+sel.value;drawDeals()};return[d.n,d.amt+'万円',sel,Math.round(d.amt*PRB[d.st]/100)+'万円']});
+    const focusId=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute('aria-label');
+    tbl($('dealTbl'),['案件','金額','いまの段階','見込み額（金額×確度）'],rowsD,{});
+    if(focusId){const f=$('dealTbl').querySelector('select[aria-label="'+focusId+'"]');if(f)f.focus()}
+    const bars=$('dealBars');bars.innerHTML='';
+    STG.forEach((s,k)=>{const n=DEALS.filter(d=>d.st===k).length;const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:5em 1fr 2.5em;gap:8px;align-items:center;margin:4px 0';
+      row.innerHTML='<b></b><div class="tr" style="height:14px;background:var(--indigo-soft);border-radius:3px;overflow:hidden"><i style="display:block;height:100%;background:var(--indigo)"></i></div><span></span>';
+      row.querySelector('b').textContent=s;row.querySelector('i').style.width=(n/DEALS.length*100)+'%';row.querySelector('span').textContent=n+'件';bars.appendChild(row)});
+    const tot=DEALS.reduce((a,d)=>a+d.amt*PRB[d.st]/100,0),all=DEALS.reduce((a,d)=>a+d.amt,0);
+    $('dealSum').textContent='全案件の金額の合計　：'+all+'万円\n受注の見込み額（合計）：約'+Math.round(tot)+'万円\n（段階が進むほど、見込みが上がる）';
+  }
+  drawDeals();
+
+  /* ---- 14: ERP ---- */
+  const ER=[
+    {t:'何を扱う？',r:[['扱うもの','受注、在庫、購買、生産、請求、会計、人事など、会社の基本の仕事。'],['一言で','お金・モノ・人の情報を、つなぐ。']]},
+    {t:'何が変わる？',r:[['これまで','部署ごとに別の表やシステム。同じ数字を、何度も入力する。'],['ERPを使うと','1回の入力が、各部署に流れる。会社全体の数字が、早く、正確に分かる。']]},
+    {t:'自分の仕事との関係',r:[['関係','自分が入力した数字は、請求や、会社の売上・利益に、つながっている。'],['心がけ','入力は、正確に、漏れなく。迷ったら、確認する。']]},
+    {t:'よくある誤解',r:[['誤解1','「経理や、情報システムの道具でしょ？」→ 営業の入力が、出発点になる。'],['誤解2','「入れたら、全部自動で正しくなる」→ 入力が間違うと、間違いも、全体に流れる。']]}
+  ];
+  const erb=$('erpBody');
+  btnList($('erp'),ER,(x,i)=>'項目 '+(i+1),x=>x.t,x=>{rows(erb,x.r);});
+
+  /* ---- 15: order flow ---- */
+  const OC=['営業','倉庫・手配','現場','経理','経営'];
+  const OS=[
+    ['営業','受注を入力','A工場：点検10台、1台30,000円。受注を、1回だけ入力する。'],
+    ['倉庫・手配','在庫・部材の確認','受注の情報が流れ、必要な部材の在庫が引き当てられる。足りなければ、手配が必要と通知される。'],
+    ['現場','作業の予定・実施','受注の情報をもとに、作業の予定が組まれ、実施される。完了が、入力される。'],
+    ['経理','請求','作業の完了の情報から、請求書が作られる。10台×30,000円＝300,000円。'],
+    ['経理','入金の確認','入金が確認されると、請求が「済み」になる。'],
+    ['経営','売上・会計に反映','売上と、案件ごとの利益が、自動で集計され、経営の数字として見られる。']
+  ];
+  let oi=0;
+  function drawOrd(){
+    const cp=$('ordChips');cp.innerHTML='';const cur=oi>0?OS[oi-1][0]:null;
+    OC.forEach(c=>{const s=document.createElement('span');s.className='cpt'+(c===cur?' on':'');s.textContent=c;cp.appendChild(s)});
+    const ol=$('ordLog');ol.innerHTML='';
+    OS.slice(0,oi).forEach((a,i)=>{const li=document.createElement('li');li.innerHTML='<b></b><span class="tg"></span><div></div>';li.querySelector('b').textContent=(i+1)+'. '+a[1];li.querySelector('.tg').textContent=a[0];li.querySelector('div').textContent=a[2];if(i===oi-1)li.className='now';ol.appendChild(li)});
+    $('ordNext').disabled=oi>=OS.length;
+    if(oi===0)res($('ordRes'),'','「次へ進める」を押してください。');
+    else if(oi<OS.length)res($('ordRes'),'','ステップ '+oi+' / '+OS.length);
+    else res($('ordRes'),'good','最初の入力は、営業の「受注の入力」だけでした。あとの部署には、情報が流れています。だからこそ、最初の入力が正確なことが、大切です。（シミュレーションです）');
+  }
+  $('ordNext').onclick=()=>{if(oi<OS.length){oi++;drawOrd()}};$('ordReset').onclick=()=>{oi=0;drawOrd()};drawOrd();
+
+  /* ---- 16: error spread ---- */
+  function showEr(k){
+    const hdr=['場面','入力される数','結果'];
+    const r=k?[
+      ['受注（営業・1回だけ入力）','100台（打ち間違い）','誤りが、そのまま登録される'],
+      ['在庫・手配（自動）','100台分を手配','部材を、必要以上に手配してしまう'],
+      ['請求（自動）','100台×30,000円＝3,000,000円','請求額が、10倍になる'],
+      ['売上・会計（自動）','3,000,000円','会社の数字が、実際と大きくずれる']
+    ]:[
+      ['受注（営業）','100台（打ち間違い）','営業の表だけが、間違っている'],
+      ['在庫・手配（倉庫・別に入力）','10台','正しい数で、入力されている'],
+      ['請求（経理・別に入力）','10台×30,000円＝300,000円','正しい金額で、入力されている'],
+      ['売上・会計（経理・別に入力）','300,000円','正しい金額で、入力されている']
+    ];
+    tbl($('erTbl'),hdr,r,{rowCls:i=>(k||i===0)?'badrow':''});
+    res($('erRes'),k?'bad':'',k?'ERPでは、1か所の誤りが、全体に流れます。早く、正確に流れる分、誤りも、速く広がります。入力のときの確認と、入力後のチェックが、大切です。':'手作業では、後の部署が、別々に正しい数を入力していたため、被害は広がりません。ただし、営業の表と食い違うので、あとで、確認と修正の手間が、かかります。');
+  }
+  seg($('segEr'),b=>showEr(+b.dataset.e));showEr(0);
+
+  /* ---- 18: impact ---- */
+  const IM=[
+    {t:'入力ミス',r:[['例','数量や金額を、打ち間違える。'],['影響','請求の誤り、在庫の不足・過剰、会社の数字のずれ。'],['対策','入力時に、数字を見直す。入力後の、チェックの仕組みを使う。']]},
+    {t:'入力漏れ',r:[['例','担当者の交代や、案件の進み具合を、入力しない。'],['影響','他の人が、古い情報で動く。集計も、実態とずれる。'],['対策','「あとでまとめて」を避け、その場で入力する。']]},
+    {t:'マスタの誤り',r:[['例','お客様の住所や、支払条件が、古い。'],['影響','請求書の送り先の間違い、入金の遅れ。'],['対策','変更があったら、すぐにマスタを直す。']]},
+    {t:'入力のルール違い',r:[['例','会社名の表記が、人によって違う。（（株）、株式会社…）'],['影響','同じお客様が、複数に分かれ、集計できない。'],['対策','入力のルールを、そろえる。']]}
+  ];
+  const imb=$('impactBody');
+  btnList($('impact'),IM,(x,i)=>'場面 '+(i+1),x=>x.t,x=>{rows(imb,x.r);});
+
+  /* ---- 20: AI table ---- */
+  tbl($('aiTbl'),['道具','AIにできること（例）','人が確認すること'],[
+    ['CRM','問い合わせ内容の要約、返信メールの下書き、過去のやりとりの整理','お客様の名前・日付・約束の内容が、正しいか。送る前に、必ず読む。'],
+    ['SFA','商談メモの要約、次の一手の案、受注の見込みの整理','見込みの根拠。お客様の本音は、人にしか聞けない。'],
+    ['ERP','需要の予測、在庫の過不足の知らせ、異常な数字の検知','予測が、現場の実感と合うか。発注・変更の最終判断。']],{});
+
+  /* ---- 21: care ---- */
+  const CA=[
+    {t:'間違い',r:[['リスク','もっともらしい間違い（ハルシネーション）。数字の計算の誤り。'],['対策','名前・日付・金額は、元のデータで確かめる。重要な判断は、人が最終確認する。']]},
+    {t:'お客様の情報',r:[['リスク','お客様の個人情報・取引の内容を、AIに入力すると、外部に送られることがある。'],['対策','入力してよい範囲は、社内のルールと、サービスの規約を確認する。迷ったら、ダミーデータで試す。']]},
+    {t:'任せすぎ',r:[['リスク','AIの案を、そのままお客様に送る。重要な判断を、AIに委ねる。'],['対策','AIは下ごしらえ。送る前、決める前に、人が確認する。']]},
+    {t:'偽のメール・詐欺',r:[['リスク','AIで、自然な日本語の偽メールが、作られやすくなっている。'],['対策','送信元・URLを確認する。お金や情報の依頼は、別の経路で確かめる。']]}
+  ];
+  const cab=$('careBody');
+  btnList($('care'),CA,(x,i)=>'注意 '+(i+1),x=>x.t,x=>{rows(cab,x.r);});
+
+  /* ---- 22: reveal ---- */
+  $('chkBtn').onclick=()=>{res($('chkRes'),'bad','元には戻りません。たとえば元が100万円なら、20%値引きで80万円。そこから10%値上げで、88万円です。元より、12%安いままです。「値引き」と「値上げ」は、基準にする金額が違うため、打ち消し合いません。AIの案も、同じように、式にして確かめます。')};
+  res($('chkRes'),'','');
+
+  /* ---- 23: whole flow ---- */
+  tbl($('flowTbl'),['場面','道具','情報の流れ','AIにできること','人の役割'],[
+    ['お客様と出会う','CRM','問い合わせ・担当者・履歴を、1か所に','内容の要約、返信の下書き','最新の情報の確認、お客様への対応'],
+    ['商談を進める','SFA','案件の段階・見込みを、全員で共有','商談メモの整理、次の一手の案','提案の判断、お客様との対話'],
+    ['受注して、納品・請求','ERP','受注が、在庫・請求・売上に流れる','需要の予測、異常の知らせ','入力の正確さ、最終の承認'],
+    ['全体を見て、改善する','（データの土台）','すべての情報が、つながっている','傾向の分析、改善案','方針を決める、責任を持つ']],{});
+
+  /* ---- 25: think ---- */
+  const TH=[
+    ['自分が、いま入力している情報は、何か','それは、誰の役に立っているか。'],
+    ['自分の仕事で、「同じ情報を、何度も入力している」ところは、どこか','つなげられないか、考える。'],
+    ['自分の仕事で、「人に聞かないと分からない」ことは、何か','見える化できないか、考える。'],
+    ['AIに、下ごしらえを頼めそうな作業は、何か','最終確認は、誰がするか。'],
+    ['AIに、入力してはいけない情報は、何か','社内のルールを、確認する。']
+  ];
+  let thDone=0;
+  function updTh(){res($('thinkRes'),thDone===TH.length?'good':'',thDone===TH.length?'すべて、考えました。小さく、1つ、試してみましょう。':thDone+' / '+TH.length+' 項目を、考えました。')}
+  TH.forEach(x=>{const li=document.createElement('li');li.innerHTML='<span>□</span><div><b></b></div>';li.querySelector('b').textContent=x[0];li.querySelector('div').appendChild(document.createTextNode(x[1]));
+    li.style.cursor='pointer';li.tabIndex=0;li.setAttribute('role','checkbox');li.setAttribute('aria-checked','false');
+    const t=()=>{const on=li.getAttribute('aria-checked')!=='true';li.setAttribute('aria-checked',on);li.querySelector('span').textContent=on?'☑':'□';thDone+=on?1:-1;updTh()};
+    li.onclick=t;li.onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();t()}};$('think').appendChild(li)});
+  updTh();
+
+  const h=parseInt(location.hash.slice(1),10);slides[0].classList.add('active');show(isNaN(h)?0:h-1);
+})();
+</script>
+</body>
+</html>
