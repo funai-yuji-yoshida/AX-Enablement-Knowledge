@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Deep Dive 第1回 キックオフ｜AX教育ユニット-AX Enablement Team-</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Inter:wght@400;600;700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#FFFFFF; --bg-tint:#F4F8FC; --surface:#FFFFFF; --ink:#2D3436; --ink-soft:#4A5560; --muted:#636E72;
+  --navy:#0A1B3A; --head:#0A1B3A; --blue:#1E4D8C; --cyan:#0099CC; --cyan-text:#00739A; --callout:#E6F5FD;
+  --rule:#D0D5D4; --zebra:#F0F2F5; --ok:#00805F; --ng:#B3261E; --bar:#0A1B3A; --bar-ink:#FFFFFF; --bar-soft:#9FB3CF;
+  --stage-dark:#0A1B3A; --on-dark:#FFFFFF; --on-dark-soft:#CCECFF; --focus:#0099CC;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0E1626; --bg-tint:#121D31; --surface:#16223A; --ink:#E3E8EF; --ink-soft:#C2CBD6; --muted:#9AA6B4;
+    --head:#F2F5F9; --blue:#8DB4E8; --cyan:#4CC3E8; --cyan-text:#6FD0EE; --callout:#16304A;
+    --rule:#2C3A52; --zebra:#152036; --ok:#4CD1A8; --ng:#F08A80; --bar:#060E1E; --bar-ink:#FFFFFF; --bar-soft:#8FA3BF;
+    --stage-dark:#060E1E; --on-dark:#FFFFFF; --on-dark-soft:#CCECFF; --focus:#4CC3E8;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0E1626; --bg-tint:#121D31; --surface:#16223A; --ink:#E3E8EF; --ink-soft:#C2CBD6; --muted:#9AA6B4;
+  --head:#F2F5F9; --blue:#8DB4E8; --cyan:#4CC3E8; --cyan-text:#6FD0EE; --callout:#16304A;
+  --rule:#2C3A52; --zebra:#152036; --ok:#4CD1A8; --ng:#F08A80; --bar:#060E1E; --bar-ink:#FFFFFF; --bar-soft:#8FA3BF;
+  --stage-dark:#060E1E; --on-dark:#FFFFFF; --on-dark-soft:#CCECFF; --focus:#4CC3E8;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ height:100%; scroll-padding-top:env(safe-area-inset-top,0px); }
+body{ height:100%; margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans JP","Yu Gothic","Meiryo",system-ui,sans-serif; letter-spacing:.02em; line-height:1.7;
+  font-size:clamp(16px,1.45vw,23px); display:flex; flex-direction:column; }
+.num, .clock, .tnum{ font-family:"Inter","Noto Sans JP",system-ui,sans-serif; font-feature-settings:"tnum"; }
+button, input, textarea{ font:inherit; color:inherit; }
+/* 日本語の改行を文節単位にする（対応ブラウザのみ。非対応でも通常どおり表示） */
+body{ word-break:auto-phrase; }
+h1,h2,h3,p,li,td,th,label,.callout,.card,.voice,.pp-hero,.timebox,.more button,.pick,.mod,.tl .c{ text-wrap:pretty; }
+h1,h2,h3,.pp-hero .tag,.aim-yes,.thesis .is,.gapline{ text-wrap:balance; }
+:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+
+/* ---------- Session bar (the memorable element) ---------- */
+.bar{ background:var(--bar); color:var(--bar-ink); display:flex; align-items:center; gap:1.2em; padding:.6em 1.4em; flex:none; flex-wrap:wrap; }
+.bar .title{ font-weight:700; font-size:.8em; white-space:nowrap; }
+.track{ flex:1; min-width:240px; display:flex; gap:4px; height:2.2em; }
+.seg{ position:relative; flex:1 1 auto; min-width:0; border:0; border-radius:2px; background:rgba(255,255,255,.1); color:var(--bar-soft); font-size:.68em; cursor:pointer; overflow:hidden; padding:0 .8em; text-align:center; white-space:nowrap; text-overflow:ellipsis; }
+.seg .fill{ position:absolute; inset:0 auto 0 0; width:0; background:rgba(0,153,204,.35); transition:width .3s linear; }
+.seg span{ position:relative; }
+.seg.now{ color:#FFFFFF; background:rgba(255,255,255,.18); box-shadow:inset 0 -3px 0 #0099CC; }
+.seg.done{ color:#FFFFFF; }
+.seg.done .fill{ width:100%; background:rgba(0,153,204,.22); }
+.timer{ display:flex; align-items:center; gap:.5em; }
+.clock{ font-size:1.25em; font-weight:700; min-width:3.6em; text-align:right; }
+.clock.over{ color:#FFB4A9; }
+.tbtn{ background:transparent; border:1px solid rgba(255,255,255,.35); color:#FFFFFF; border-radius:999px; padding:.15em .9em; font-size:.72em; cursor:pointer; }
+.tbtn:hover{ background:rgba(255,255,255,.12); }
+
+/* ---------- Stage ---------- */
+.stage{ flex:1; position:relative; overflow:hidden; }
+.slide{ position:absolute; inset:0; overflow:auto; padding:clamp(24px,5vh,64px) clamp(20px,6vw,96px) 2em; display:none; flex-direction:column; background:var(--bg); }
+.slide.on{ display:flex; animation:in .35s ease-out; }
+@keyframes in{ from{ opacity:0; transform:translateY(8px); } }
+.slide.tint{ background:var(--bg-tint); }
+.slide.dark{ background:var(--stage-dark); color:var(--on-dark); }
+.inner{ width:100%; max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:1.4em; flex:1; }
+.part{ font-size:.75em; font-weight:700; color:var(--blue); margin:0; }
+.dark .part{ color:#66C7E5; }
+h1,h2,h3{ margin:0; color:var(--head); line-height:1.35; }
+h2{ font-size:2em; font-weight:700; padding-bottom:.45em; border-bottom:3px solid var(--head); }
+h3{ font-size:1.15em; }
+p{ margin:0; }
+.lede{ color:var(--ink-soft); }
+.muted{ color:var(--muted); font-size:.85em; }
+
+/* cover */
+.cover{ background:linear-gradient(160deg,#0A1B3A 0%,#11264D 55%,#1E4D8C 100%); color:#FFFFFF; }
+.cover .inner{ justify-content:center; }
+.cover h1{ color:#FFFFFF; font-size:clamp(30px,4.4vw,68px); font-weight:900; line-height:1.3; letter-spacing:0; }
+.cover h1 .q{ color:#66C7E5; }
+.cover .sub{ color:#CCECFF; font-size:1.05em; }
+.cover .meta{ color:#FFFFFF; margin-top:2em; display:flex; gap:2em; flex-wrap:wrap; font-size:.9em; }
+.cover .start{ align-self:flex-start; margin-top:1em; background:#FFFFFF; color:#0A1B3A; border:0; border-radius:8px; padding:.6em 1.6em; font-weight:700; cursor:pointer; }
+
+/* modules */
+.mods{ display:flex; flex-direction:column; }
+.mod{ display:flex; gap:1.4em; padding:1em 0; border-top:1px solid var(--rule); align-items:flex-start; }
+.mod:last-child{ border-bottom:1px solid var(--rule); }
+.mod .num{ font-size:1.9em; font-weight:700; color:var(--cyan); line-height:1; min-width:2.2em; }
+
+/* table */
+table{ width:100%; border-collapse:collapse; }
+th{ background:#1B2438; color:#FFFFFF; text-align:left; padding:.55em 1em; font-weight:700; }
+td{ padding:.6em 1em; border-bottom:1px solid var(--rule); vertical-align:top; }
+tr.jump{ cursor:pointer; }
+tr.jump:hover td{ background:var(--zebra); }
+tr.jump.now td{ background:var(--callout); }
+td.k{ font-weight:700; color:var(--head); background:var(--zebra); width:24%; }
+
+/* grids, cards */
+.g2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1em; }
+.g3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+.g4{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1em; }
+.card{ background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:1.1em 1.2em; display:flex; flex-direction:column; gap:.4em; }
+.card .num{ color:var(--cyan-text); font-weight:700; font-size:.8em; }
+.callout{ background:var(--callout); border-radius:4px; padding:1em 1.3em; color:var(--head); }
+
+/* icebreak */
+.dark .big{ color:#FFFFFF; font-size:clamp(28px,4vw,60px); font-weight:900; line-height:1.35; }
+.roulette{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:1.4em; align-items:start; }
+.namebox textarea{ width:100%; min-height:10em; resize:vertical; line-height:1.7; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); border-radius:4px; padding:.6em .8em; color:#FFFFFF; }
+.namebox label{ display:block; color:#CCECFF; font-size:.85em; margin-bottom:.3em; }
+.speaker{ border:1px solid rgba(255,255,255,.3); border-radius:4px; padding:1.1em 1.3em; display:flex; flex-direction:column; gap:.6em; }
+.speaker .who{ font-size:1.8em; font-weight:900; color:#FFFFFF; min-height:1.4em; }
+.speaker .mini{ font-size:1.5em; font-weight:700; color:#66C7E5; }
+.btn{ background:var(--blue); color:#FFFFFF; border:0; border-radius:8px; padding:.45em 1.2em; font-weight:700; cursor:pointer; }
+.btn:hover{ filter:brightness(1.1); }
+.btn.ghost{ background:transparent; color:var(--blue); border:1px solid var(--blue); }
+.dark .btn{ background:#FFFFFF; color:#0A1B3A; }
+.dark .btn.ghost{ background:transparent; color:#FFFFFF; border-color:rgba(255,255,255,.5); }
+.row{ display:flex; gap:.6em; flex-wrap:wrap; align-items:center; }
+.order{ display:flex; flex-wrap:wrap; gap:.4em; margin:0; padding:0; list-style:none; }
+.order li{ border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:.1em .9em; font-size:.85em; color:#CCECFF; }
+.order li.now{ background:#FFFFFF; color:#0A1B3A; font-weight:700; border-color:#FFFFFF; }
+.order li.done{ opacity:.5; text-decoration:line-through; }
+
+/* tabs */
+.tabs{ display:flex; gap:.4em; border-bottom:1px solid var(--rule); }
+.tab{ background:transparent; border:0; border-bottom:3px solid transparent; padding:.4em 1em; font-weight:700; color:var(--muted); cursor:pointer; }
+.tab[aria-selected="true"]{ color:var(--head); border-bottom-color:var(--cyan); }
+.panel{ display:none; }
+.panel.on{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+
+/* quiz */
+.quiz{ display:flex; flex-direction:column; }
+.qrow{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.4em 1em; align-items:center; padding:.6em 0; border-top:1px solid var(--rule); }
+.qrow:last-child{ border-bottom:1px solid var(--rule); }
+.qbtns{ display:flex; gap:.4em; }
+.qb{ background:var(--surface); border:1px solid var(--rule); border-radius:999px; padding:.15em 1em; cursor:pointer; font-size:.85em; }
+.qb:hover{ border-color:var(--blue); }
+.qb[aria-pressed="true"]{ background:var(--blue); color:#FFFFFF; border-color:var(--blue); }
+.qres{ grid-column:1 / -1; font-size:.85em; display:none; }
+.qres.ok{ display:block; color:var(--ok); }
+.qres.ng{ display:block; color:var(--ng); }
+.score{ font-weight:700; color:var(--head); }
+
+/* pains select */
+.pick{ text-align:left; cursor:pointer; background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:1.1em 1.2em; display:flex; flex-direction:column; gap:.4em; transition:border-color .15s, box-shadow .15s; }
+.pick:hover{ border-color:var(--blue); }
+.pick[aria-pressed="true"]{ border-color:var(--cyan); box-shadow:inset 0 0 0 2px var(--cyan); }
+.pick .state{ font-size:.8em; font-weight:700; color:var(--cyan-text); min-height:1.5em; }
+.pick p{ color:var(--ink); }
+
+/* worksheet */
+.flow{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); gap:.8em; align-items:stretch; }
+.arrow{ align-self:center; color:var(--blue); font-size:1.2em; }
+.field{ display:flex; flex-direction:column; gap:.4em; background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:1em; }
+.field label{ font-weight:700; color:var(--head); }
+.field textarea{ width:100%; min-height:5.5em; resize:vertical; background:var(--bg); border:1px solid var(--rule); border-radius:4px; padding:.5em .7em; line-height:1.6; }
+.chosen{ font-weight:700; color:var(--head); }
+textarea::placeholder, input::placeholder{ color:var(--muted); }
+
+/* prompt */
+.prompt{ width:100%; min-height:11em; resize:vertical; background:var(--callout); color:var(--head); border:1px solid var(--rule); border-radius:4px; padding:1em 1.2em; line-height:1.75; }
+.toast{ font-size:.85em; color:var(--ok); min-height:1.4em; }
+
+/* goal */
+.goalline{ font-size:1.3em; font-weight:700; color:var(--head); line-height:1.6; }
+.goalline input{ font-weight:700; border:0; border-bottom:2px solid var(--cyan); background:transparent; padding:.1em .2em; width:min(18em,100%); color:var(--head); }
+ul.todo{ margin:0; padding-left:1.3em; }
+
+/* nav */
+.nav{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:1em; padding:.5em 1.4em; border-top:1px solid var(--rule); background:var(--bg); font-size:.8em; }
+.nav .pg{ color:var(--muted); }
+.nav .nb{ background:transparent; border:1px solid var(--rule); border-radius:999px; padding:.25em 1.1em; cursor:pointer; color:var(--ink); }
+.nav .nb:hover{ border-color:var(--blue); }
+.nav .nb:disabled{ opacity:.35; cursor:default; }
+
+/* difference / seminar / aim */
+.thesis{ border-left:6px solid var(--cyan); background:var(--surface); border-radius:4px; padding:.45em 1.1em; display:flex; flex-wrap:wrap; align-items:baseline; gap:.2em 1em; }
+.thesis .not{ color:var(--muted); font-size:.8em; }
+.thesis .is{ color:var(--head); font-weight:700; font-size:1.15em; line-height:1.45; }
+.thesis .is em{ font-style:normal; color:var(--cyan-text); }
+table.cmp td, table.cmp th{ padding:.22em 1em; font-size:.82em; line-height:1.5; }
+#diff .inner{ gap:.9em; }
+table.cmp td.w{ background:var(--callout); color:var(--head); font-weight:700; }
+table.cmp td.l{ color:var(--muted); }
+table.cmp th.w{ color:#66C7E5; }
+.tl{ display:grid; grid-template-columns:8.6em repeat(5,minmax(0,1fr)); gap:.4em; font-size:.85em; }
+.tl .h{ font-weight:700; text-align:center; color:var(--muted); padding:.2em; border-bottom:3px solid var(--head); }
+.tl .lab{ font-weight:700; display:flex; align-items:center; color:var(--head); }
+.tl .lab.l{ color:var(--muted); }
+.tl .c{ border-radius:4px; padding:.6em .7em; line-height:1.5; }
+.tl .c.w{ background:var(--callout); color:var(--head); }
+.tl .c.l{ background:var(--zebra); color:var(--muted); }
+.gapline{ text-align:center; font-weight:900; font-size:1.25em; color:var(--head); padding:.6em; border:2px dashed var(--rule); border-radius:4px; }
+.dark .pw{ border:1px solid rgba(255,255,255,.3); border-radius:4px; padding:1em 1.1em; display:flex; flex-direction:column; gap:.3em; }
+.dark .pw .num{ color:#66C7E5; font-weight:700; font-size:.8em; }
+.dark .pw h3{ color:#FFFFFF; }
+.dark .pw p{ color:#CCECFF; font-size:.85em; }
+.dark .aim-no{ color:#CCECFF; }
+.dark .aim-yes{ color:#FFFFFF; font-size:clamp(22px,2.6vw,38px); font-weight:900; line-height:1.5; }
+@media (max-width: 860px){ .tl{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); } .tl .h,.tl .corner{ display:none; } .tl .lab{ grid-column:1 / -1; } }
+
+/* prompt partner */
+.voices{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1em; }
+.voice{ background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:1em 1.2em; display:flex; flex-direction:column; gap:.3em; }
+.voice .q{ font-size:1.05em; font-weight:700; color:var(--head); }
+.voice .q::before{ content:"\201C"; color:var(--cyan); font-size:1.4em; line-height:0; margin-right:.1em; }
+.pp-hero{ background:linear-gradient(160deg,#0A1B3A 0%,#11264D 55%,#1E4D8C 100%); color:#FFFFFF; border-radius:6px; padding:1.2em 1.5em; display:flex; flex-direction:column; gap:.3em; }
+.pp-hero .name{ font-family:"Inter","Noto Sans JP",sans-serif; font-weight:700; font-size:2em; letter-spacing:.01em; line-height:1.2; }
+.pp-hero .tag{ font-weight:700; font-size:1.2em; color:#66C7E5; }
+.pp-hero .sub{ color:#CCECFF; }
+.steps4{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.8em; counter-reset:st; }
+.steps4 .card h3::before{ counter-increment:st; content:counter(st); display:inline-flex; align-items:center; justify-content:center; width:1.6em; height:1.6em; border-radius:50%; background:var(--cyan); color:#FFFFFF; font-size:.8em; margin-right:.4em; }
+.tips{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8em; }
+.tips .card{ padding:.8em 1em; }
+.tips .card p{ font-size:.85em; color:var(--ink-soft); }
+.tips .card .eg{ font-size:.8em; color:var(--cyan-text); }
+.build{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:1.2em; align-items:start; }
+ol.howto{ margin:0; padding-left:1.4em; display:flex; flex-direction:column; gap:.35em; }
+ol.howto li::marker{ color:var(--cyan); font-weight:700; }
+.timebox{ display:flex; flex-direction:column; gap:.4em; }
+.timebox div{ display:flex; gap:.8em; align-items:baseline; padding:.5em .9em; border-radius:4px; background:var(--callout); color:var(--head); }
+.timebox b{ min-width:3.2em; color:var(--cyan-text); }
+.sample{ flex:1; min-height:14em; font-size:.8em; }
+.more{ display:flex; flex-direction:column; gap:.4em; }
+#pp-more .inner, #pp-concept .inner{ gap:1em; }
+.more button{ text-align:left; background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:.45em 1em; font-size:.92em; cursor:pointer; display:flex; justify-content:space-between; gap:1em; align-items:center; }
+.more button:hover{ border-color:var(--blue); }
+.more button .c{ flex:none; font-size:.75em; color:var(--cyan-text); font-weight:700; }
+.nw{ white-space:nowrap; }
+.offscreen{ position:absolute; left:-9999px; top:0; width:1px; height:1px; }
+@media (max-width: 860px){ .voices,.steps4,.tips,.build{ grid-template-columns:minmax(0,1fr); } }
+
+@media (max-width: 860px){
+  .g3,.g4,.roulette,.panel.on{ grid-template-columns:minmax(0,1fr); }
+  .g2{ grid-template-columns:minmax(0,1fr); }
+  .flow{ grid-template-columns:minmax(0,1fr); }
+  .arrow{ transform:rotate(90deg); justify-self:center; }
+  .bar .title{ display:none; }
+  h2{ font-size:1.5em; }
+  .qrow{ grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width: 1240px){ .bar .title .unit{ display:none; } }
+.nav{ justify-content:flex-start; }
+.nav #prev{ margin-left:auto; }
+@media (prefers-reduced-motion: reduce){ .slide.on{ animation:none; } .seg .fill{ transition:none; } }
+</style>
+</head>
+<body>
+
+<header class="bar" aria-label="セッションの進行">
+  <div class="title">AI Deep Dive｜第1回</div>
+  <div class="track" id="track" role="list"></div>
+  <div class="timer" aria-live="off">
+    <span class="clock" id="clock">--:--</span>
+    <button class="tbtn" id="tStart" type="button">開始</button>
+    <button class="tbtn" id="tReset" type="button">リセット</button>
+  </div>
+</header>
+
+<main class="stage" id="stage">
+
+  <!-- 1 cover -->
+  <section class="slide cover" id="cover" data-part="intro" aria-label="表紙">
+    <div class="inner">
+      <p class="part" style="color:#66C7E5">AI Deep Dive｜第1回 キックオフ</p>
+      <h1>経営者に<span class="q">「AIで何ができる？」</span>と<br>聞かれたら、どう答える？</h1>
+      <div class="meta"><span>AX教育ユニット-AX Enablement Team-</span><span>2026年11月20日</span><span>講師：吉田 祐司</span></div>
+      <button class="start" type="button" data-go="goal">はじめる</button>
+    </div>
+  </section>
+
+  <!-- 2 goal -->
+  <section class="slide" id="goal" data-part="intro" aria-label="本日のゴール">
+    <div class="inner">
+      <p class="part">本日のゴール</p>
+      <h2>今日の60分で持ち帰ってほしい3つのこと</h2>
+      <div class="mods">
+        <div class="mod"><span class="num">01</span><div><h3>ユニットの目的とターゲットを共有する</h3><p class="lede">何のためのチームで、誰に価値を届けるのかを全員でそろえる</p></div></div>
+        <div class="mod"><span class="num">02</span><div><h3>AIで「AIの使いにくさ」を解く体験をする</h3><p class="lede">プロンプト作りを手伝うアプリ「Prompt Partner」を Gemini で作って試す</p></div></div>
+        <div class="mod"><span class="num">03</span><div><h3>半年後の自分のゴールを一文で書く</h3><p class="lede">これからの成長を測る、自分だけの基準をつくる</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 timetable -->
+  <section class="slide" id="timetable" data-part="intro" aria-label="進め方">
+    <div class="inner">
+      <p class="part">進め方</p>
+      <h2>毎回この5つのパートで進めます</h2>
+      <p class="muted">行をクリックすると、そのパートへ移動します。上部のバーで残り時間を管理できます。</p>
+      <table>
+        <thead><tr><th>時間</th><th>パート</th><th>やること</th></tr></thead>
+        <tbody id="ttBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4 icebreak -->
+  <section class="slide dark" id="icebreak" data-part="ice" aria-label="アイスブレイク">
+    <div class="inner">
+      <p class="part">アイスブレイク｜5分</p>
+      <p class="big">最近、AIで驚いたこと／困ったことは？</p>
+      <div class="roulette">
+        <div class="namebox">
+          <label for="names">参加者の名前（1行に1人）</label>
+          <textarea id="names" rows="6" placeholder="山田&#10;佐藤&#10;鈴木"></textarea>
+        </div>
+        <div class="speaker">
+          <span class="muted" style="color:#CCECFF">次に話す人</span>
+          <span class="who" id="who">―</span>
+          <span class="mini clock" id="mini">1:00</span>
+          <div class="row">
+            <button class="btn" id="pickBtn" type="button">次の人へ</button>
+            <button class="btn ghost" id="shuffleBtn" type="button">順番をシャッフル</button>
+            <button class="btn ghost" id="resetPick" type="button">最初から</button>
+          </div>
+          <ol class="order" id="order" aria-label="話す順番"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 unit -->
+  <section class="slide" id="unit" data-part="basic" aria-label="ユニットの4つの事業">
+    <div class="inner">
+      <p class="part">基礎知識｜10分</p>
+      <h2>AX教育ユニット-AX Enablement Team-の4つの事業</h2>
+      <div class="g2">
+        <div class="card"><h3>生成AI研修</h3><p class="lede">企業向けに、生成AIの基礎と業務活用を教える</p></div>
+        <div class="card"><h3>Zoho Creator講座</h3><p class="lede">ノーコードで業務アプリを作る力を教える</p></div>
+        <div class="card"><h3>AI活用伴走支援</h3><p class="lede">研修後、現場でAIが定着するまで一緒に進める</p></div>
+        <div class="card"><h3>Zoho Creator講座伴走支援</h3><p class="lede">受講企業のアプリ開発・運用に伴走する</p></div>
+      </div>
+      <div class="callout">「教える」と「伴走する」の両方がこのユニットの仕事です。</div>
+    </div>
+  </section>
+
+  <!-- 6 target -->
+  <section class="slide" id="target" data-part="basic" aria-label="3つの相手">
+    <div class="inner">
+      <p class="part">基礎知識｜10分</p>
+      <h2>相手が変われば、同じAIでも語り方が変わる</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" aria-controls="tp1" id="tb1" type="button">企業経営者</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="tp2" id="tb2" type="button">社内コンサルタント</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="tp3" id="tb3" type="button">社員・現場担当者</button>
+      </div>
+      <div class="panel on" id="tp1" role="tabpanel" aria-labelledby="tb1">
+        <div class="card"><h3>関心</h3><p>業績・コスト・人材</p></div>
+        <div class="card"><h3>よく出る問い</h3><p>うちで何ができる？ 費用と効果は？</p></div>
+        <div class="card"><h3>語り方</h3><p>機能ではなく、時間・お金・人への効果で話す</p></div>
+      </div>
+      <div class="panel" id="tp2" role="tabpanel" aria-labelledby="tb2">
+        <div class="card"><h3>関心</h3><p>顧客への提案力・自分の業務効率</p></div>
+        <div class="card"><h3>よく出る問い</h3><p>顧客にどう提案する？ 自分の仕事はどう楽になる？</p></div>
+        <div class="card"><h3>語り方</h3><p>提案にそのまま使える型と、自分の業務での使い方で話す</p></div>
+      </div>
+      <div class="panel" id="tp3" role="tabpanel" aria-labelledby="tb3">
+        <div class="card"><h3>関心</h3><p>自分の仕事が楽になるか・使いこなせるか・仕事がなくならないか</p></div>
+        <div class="card"><h3>よく出る問い</h3><p>何から使えばいい？ 間違えたらどうする？</p></div>
+        <div class="card"><h3>語り方</h3><p>毎日の困りごとから入り、小さく試して「できた」を体験してもらう</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 quiz -->
+  <section class="slide" id="canai" data-part="basic" aria-label="生成AIの得意・苦手">
+    <div class="inner">
+      <p class="part">基礎知識｜10分</p>
+      <h2>これはAIに任せていい？ 得意・苦手クイズ</h2>
+      <div class="quiz" id="quiz"></div>
+      <div class="row"><span class="score" id="score">0 / 6 問正解</span><button class="btn ghost" id="quizReset" type="button">やり直す</button></div>
+      <p class="muted">苦手を知っていると、もっともらしい誤り（ハルシネーション）を防げます。</p>
+    </div>
+  </section>
+
+  <!-- diff -->
+  <section class="slide" id="diff" data-part="basic" aria-label="成果を上げる人と感じない人の違い">
+    <div class="inner">
+      <p class="part">基礎知識｜10分</p>
+      <h2>AI活用で成果を上げる人・感じない人の違い</h2>
+      <div class="thesis"><p class="not"><s>AIの知識量</s>　<s>操作スキル</s>　よりも</p>
+        <p class="is">差を生むのは<em>「AIを使って仕事を変えようとしているか」</em>どうか。</p></div>
+      <table class="cmp">
+        <thead><tr><th>観点</th><th class="w">成果を上げる人</th><th>成果を感じない人</th></tr></thead>
+        <tbody>
+          <tr><td class="k">AIへの認識</td><td class="w">仕事を変える道具</td><td class="l">質問に答えてくれる道具</td></tr>
+          <tr><td class="k">課題意識</td><td class="w">解決したい課題がある</td><td class="l">何に使えばよいかわからない</td></tr>
+          <tr><td class="k">利用方法</td><td class="w">日常業務に組み込む</td><td class="l">思いついたときに使う</td></tr>
+          <tr><td class="k">思考</td><td class="w">AIと一緒に考える</td><td class="l">AIに答えを求める</td></tr>
+          <tr><td class="k">行動</td><td class="w">試行錯誤を繰り返す</td><td class="l">1回試して終わる</td></tr>
+          <tr><td class="k">評価</td><td class="w">成果や時間削減で評価</td><td class="l">回答の面白さで評価</td></tr>
+          <tr><td class="k">学習</td><td class="w">自分の業務で学ぶ</td><td class="l">セミナーで学んで終わる</td></tr>
+          <tr><td class="k">発展</td><td class="w">他の業務にも応用する</td><td class="l">教わった使い方に限定する</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- seminar -->
+  <section class="slide" id="seminar" data-part="basic" aria-label="セミナーの効果を感じる人・感じない人">
+    <div class="inner">
+      <p class="part">基礎知識｜10分</p>
+      <h2>セミナーの満足度と、実務での成果は別物</h2>
+      <p class="lede">差は受講前から始まり、1か月後に大きく開きます。私たちが講座を設計するときも、受講者として学ぶときも同じです。</p>
+      <div class="tl">
+        <div class="h corner"></div><div class="h">受講前</div><div class="h">受講中</div><div class="h">受講直後</div><div class="h">1週間後</div><div class="h">1か月後</div>
+        <div class="lab">効果を感じる人</div>
+        <div class="c w">自分の課題を持っている</div><div class="c w">自分の業務に置き換えて考える</div><div class="c w">すぐに実務で試す</div><div class="c w">改善・応用している</div><div class="c w">業務に定着している</div>
+        <div class="lab l">効果を感じない人</div>
+        <div class="c l">受講することが目的</div><div class="c l">デモを見て<span class="nw">理解した気になる</span></div><div class="c l">「便利だった」という感想で終わる</div><div class="c l">使い方を忘れている</div><div class="c l">元の仕事に戻っている</div>
+      </div>
+      <div class="callout">今日の後半は、「AIを使いこなせない」という課題を、その場でAIと一緒にアプリを作って解きます。</div>
+    </div>
+  </section>
+
+  <!-- pp-problem -->
+  <section class="slide tint" id="pp-problem" data-part="solve" aria-label="お題：AIを使いこなせないと感じている人">
+    <div class="inner">
+      <p class="part">課題解決｜15分</p>
+      <h2>お題：「AIをうまく使いこなせない」と感じている人を助ける</h2>
+      <div class="voices">
+        <div class="voice"><p class="q">何を聞けばいいのか、わからない</p><p class="muted">入力欄を前に手が止まる</p></div>
+        <div class="voice"><p class="q">聞いても、期待した答えが返ってこない</p><p class="muted">一度で諦めてしまう</p></div>
+        <div class="voice"><p class="q">プロンプトの書き方を覚えるのは大変</p><p class="muted">勉強する時間がない</p></div>
+      </div>
+      <div class="callout">足りないのは操作スキルではなく、<b>やりたいことを整理して言葉にすること</b>。それなら、その整理こそAIに手伝ってもらえばいい。</div>
+    </div>
+  </section>
+
+  <!-- pp-concept -->
+  <section class="slide tint" id="pp-concept" data-part="solve" aria-label="Prompt Partner のコンセプト">
+    <div class="inner">
+      <p class="part">課題解決｜15分</p>
+      <h2>今日つくるアプリ：Prompt Partner</h2>
+      <div class="pp-hero">
+        <span class="name">Prompt Partner</span>
+        <span class="tag">AIと一緒に、仕事の指示をつくる。</span>
+        <span class="sub">プロンプトを知らなくても大丈夫。あなたのやりたいことをAIが整理します。</span>
+      </div>
+      <div class="steps4">
+        <div class="card"><h3>話す</h3><p>やりたいことを普段の言葉で書く</p></div>
+        <div class="card"><h3>答える</h3><p>AIが「誰に・何のため・材料・形」を質問する</p></div>
+        <div class="card"><h3>完成</h3><p>そのまま使えるプロンプトができる</p></div>
+        <div class="card"><h3>使う</h3><p>コピーしてAIに貼る。ポイントも学べる</p></div>
+      </div>
+      <p class="muted">アプリはプログラミングなしで、Gemini の Canvas にお願いして作ります。</p>
+    </div>
+  </section>
+
+  <!-- pp-tips -->
+  <section class="slide" id="pp-tips" data-part="solve" aria-label="Geminiに指示するコツ">
+    <div class="inner">
+      <p class="part">課題解決｜15分</p>
+      <h2>Gemini にアプリを作ってもらう指示の6つのコツ</h2>
+      <div class="tips">
+        <div class="card"><span class="num">01</span><h3>目的と使う人を最初に書く</h3><p>誰の、何を解決するアプリかで、画面の作りが変わる</p><p class="eg">例：AIが苦手な事務・営業の担当者向け</p></div>
+        <div class="card"><span class="num">02</span><h3>画面の流れを番号で書く</h3><p>最初の画面 → ボタン → 次の画面、の順に</p><p class="eg">例：1. 入力 2. 質問 3. 完成</p></div>
+        <div class="card"><span class="num">03</span><h3>入力と出力を具体的に</h3><p>入力欄・ボタン・完成形の見出しまで決める</p><p class="eg">例：【役割】【目的】【出力形式】…</p></div>
+        <div class="card"><span class="num">04</span><h3>見た目は雰囲気を一言で</h3><p>細かい指定より、印象と使う場面を伝える</p><p class="eg">例：白基調・青アクセント・スマホ対応</p></div>
+        <div class="card"><span class="num">05</span><h3>一度で完璧を狙わない</h3><p>まず動かし、触ってから「ここをこう直して」と追加で頼む</p><p class="eg">例：質問を3問に減らして</p></div>
+        <div class="card"><span class="num">06</span><h3>困ったら症状をそのまま伝える</h3><p>原因がわからなくても、起きていることを書けば直してくれる</p><p class="eg">例：ボタンを押しても反応しない</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- pp-build -->
+  <section class="slide" id="pp-build" data-part="hands" aria-label="Gemini Canvas で作る手順">
+    <div class="inner">
+      <p class="part">手を動かす｜20分</p>
+      <h2>Gemini の Canvas で Prompt Partner を作る</h2>
+      <div class="build">
+        <ol class="howto">
+          <li>Gemini（gemini.google.com）を開く。会社のルールで使えるアカウントで</li>
+          <li>入力欄の下のツールから <b>Canvas</b> を選ぶ</li>
+          <li>次のスライドのサンプルプロンプトを貼って送信</li>
+          <li>右側にできたアプリで、自分の仕事を例に実際に使ってみる</li>
+          <li>気になった点を追加の指示で直す（2回以上）</li>
+          <li>隣の人と交換して使ってもらい、感想をもらう</li>
+        </ol>
+        <div class="timebox">
+          <div><b class="tnum">5分</b>サンプルを貼って作る</div>
+          <div><b class="tnum">10分</b>自分の仕事で試して、直す</div>
+          <div><b class="tnum">5分</b>ペアで交換して感想</div>
+          <p class="muted">顧客名や個人情報は入力しない。架空の内容で試します。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- pp-prompt -->
+  <section class="slide" id="pp-prompt" data-part="hands" aria-label="サンプルプロンプト">
+    <div class="inner">
+      <p class="part">手を動かす｜20分</p>
+      <h2>サンプルプロンプト：Gemini Canvas に貼る</h2>
+      <textarea class="prompt sample" id="samplePrompt" aria-label="Prompt Partner を作るサンプルプロンプト">「Prompt Partner」というWebアプリを作ってください。
+
+■ 目的
+生成AIをうまく使いこなせないと感じている社会人が、プロンプト（AIへの指示文）を知らなくても、やりたいことを普段の言葉で書くだけで、そのまま使えるプロンプトを作れるようにする。
+
+■ コンセプト
+アプリ名：Prompt Partner
+キャッチコピー：AIと一緒に、仕事の指示をつくる。
+サブコピー：プロンプトを知らなくても大丈夫。あなたのやりたいことをAIが整理します。
+
+■ 使う人
+・AIを使ったことはあるが、思った答えが返ってこない人
+・ITが得意ではない事務・営業・現場の担当者
+
+■ 画面と操作の流れ
+1. 最初の画面：「AIにやってほしいことを、普段の言葉で書いてください」という入力欄と、例文ボタン（会議の議事録をまとめたい／お客様へのお詫びメールを書きたい／新しい企画のアイデアを出したい）を置く
+2. 「AIと整理する」ボタンを押すと、AIが内容を読み取り、足りない情報を1問ずつ質問する（最大5問）
+　・誰に向けたものか　・何のためか（ゴール）　・手元にある材料　・出力の形（文章／箇条書き／表、文字数）　・トーンや注意点
+　・各質問に選択肢ボタンを2〜4個出し、自由入力と「おまかせ」も選べるようにする
+3. 質問が終わったら、完成したプロンプトを次の見出しで表示する
+　【役割】【目的】【背景・材料】【やってほしいこと】【出力形式】【注意点】
+4. 完成画面に「コピー」「もう少し直す（追加の要望を入れて作り直す）」「最初からやり直す」ボタンを置く
+5. 完成したプロンプトの下に「このプロンプトのポイント」を初心者向けに3行で説明する
+
+■ AIの使い方
+・質問づくりとプロンプトの作成には Gemini を使う
+・AIが使えない場合でも、上の5つの質問を順番に聞く形で最後まで使えるようにする
+・返答はすべて日本語で、やさしい言葉にする
+
+■ デザイン
+・白を基調に、落ち着いた青をアクセントにする。文字は大きめ
+・スマートフォンでも使いやすいレイアウト
+・画面上部に「入力 → 質問 → 完成」のどこにいるかを表示する
+
+■ 注意
+・入力欄の下に「顧客名や個人情報は入力しないでください」と表示する</textarea>
+      <div class="row">
+        <button class="btn" id="copySample" type="button">プロンプトをコピー</button>
+        <button class="btn ghost" id="resetSample" type="button">元に戻す</button>
+        <span class="toast" id="toast1" role="status"></span>
+      </div>
+      <p class="muted">使う人や例文を、自分の職場に合わせて書き換えてから貼ってもかまいません。</p>
+    </div>
+  </section>
+
+  <!-- pp-more -->
+  <section class="slide" id="pp-more" data-part="hands" aria-label="追加の指示の例">
+    <div class="inner">
+      <p class="part">手を動かす｜20分</p>
+      <h2>動いたら、追加の指示で育てる</h2>
+      <p class="lede">押すとコピーされます。Canvas の入力欄に貼って送るだけで、アプリが直ります。</p>
+      <div class="more">
+        <button type="button" class="chipcopy" data-text="質問の数を3問に減らして、もっと早く完成できるようにしてください。">質問の数を3問に減らして、もっと早く完成できるようにしてください。<span class="c">コピー</span></button>
+        <button type="button" class="chipcopy" data-text="最初に職種（営業・事務・現場・管理職）を選べるようにして、例文ボタンを職種に合わせて変えてください。">最初に職種を選べるようにして、例文ボタンを職種に合わせて変えてください。<span class="c">コピー</span></button>
+        <button type="button" class="chipcopy" data-text="作ったプロンプトを保存して、一覧から呼び出せるようにしてください。">作ったプロンプトを保存して、一覧から呼び出せるようにしてください。<span class="c">コピー</span></button>
+        <button type="button" class="chipcopy" data-text="完成したプロンプトを、AIの回答がよくなるようにAI自身にチェックさせる「改善する」ボタンを追加してください。">完成したプロンプトをAI自身にチェックさせる「改善する」ボタンを追加してください。<span class="c">コピー</span></button>
+        <button type="button" class="chipcopy" data-text="ボタンを押しても反応しません。原因を調べて直してください。">ボタンを押しても反応しません。原因を調べて直してください。<span class="c">コピー</span></button>
+      </div>
+      <div class="row"><span class="toast" id="toast3" role="status"></span></div>
+      <textarea class="offscreen" id="chipBuf" aria-hidden="true" tabindex="-1"></textarea>
+    </div>
+  </section>
+
+  <!-- 13 reflect -->
+  <section class="slide" id="reflect" data-part="reflect" aria-label="振り返り">
+    <div class="inner">
+      <p class="part">振り返り＆ブレスト｜10分</p>
+      <h2>1人3つ、言葉にして残す</h2>
+      <div class="g3">
+        <div class="field"><label for="r1">今日の学び</label><textarea id="r1" data-save="r1" placeholder="一番の気づきを1つ"></textarea></div>
+        <div class="field"><label for="r2">顧客に使えること</label><textarea id="r2" data-save="r2" placeholder="明日から提案に使えそうなことを1つ"></textarea></div>
+        <div class="field"><label for="r3">次週やりたいこと</label><textarea id="r3" data-save="r3" placeholder="もっと知りたい・試したいテーマ"></textarea></div>
+      </div>
+      <p class="muted">1人ずつ読み上げて共有します。次週やりたいことは、次回以降のテーマ決めに使います。</p>
+    </div>
+  </section>
+
+  <!-- aim -->
+  <section class="slide dark" id="aim" data-part="reflect" aria-label="成果を左右する4つの力と目指すこと">
+    <div class="inner">
+      <p class="part">最後に</p>
+      <p class="aim-no">AI活用の成果を左右するのは、操作スキルではなく次の4つの力。</p>
+      <div class="g4">
+        <div class="pw"><span class="num">01</span><h3>課題発見力</h3><p>何を解決すべきかを見つける力</p></div>
+        <div class="pw"><span class="num">02</span><h3>問いを立てる力</h3><p>AIに何を考えさせるかを設計する力</p></div>
+        <div class="pw"><span class="num">03</span><h3>評価する力</h3><p>AIの回答を疑い、検証する力</p></div>
+        <div class="pw"><span class="num">04</span><h3>再設計する力</h3><p>仕事の仕組みそのものを変える力</p></div>
+      </div>
+      <p class="aim-no">目指すのは、AIを上手に操作できる人を育てることではありません。</p>
+      <p class="aim-yes">AIをきっかけに、自ら仕事の課題を発見し、解決策を考え、仕事のあり方を変えられる人を育てること。</p>
+    </div>
+  </section>
+
+  <!-- 14 closing -->
+  <section class="slide tint" id="closing" data-part="reflect" aria-label="半年後のゴール">
+    <div class="inner">
+      <p class="part">最後に</p>
+      <h2>半年後の自分を一文で書く</h2>
+      <p class="goalline">半年後、私は経営者の前で<br><input id="goalText" data-save="goal" aria-label="半年後にできるようになっていること" placeholder="AIの活用提案を自信を持って">ができるようになっている。</p>
+      <div>
+        <h3>次回までに</h3>
+        <ul class="todo">
+          <li>今日作った Prompt Partner を自分の業務で3回使い、改善した点をチームで共有する</li>
+          <li>ゴールの一文を手元に残す</li>
+          <li>次回テーマ：[第2回のテーマ]</li>
+        </ul>
+      </div>
+      <div>
+        <h3>今日のメモ</h3>
+        <p class="muted">これまでの入力が自動で入ります。自由に書き足し・書き換えできます。</p>
+        <textarea class="prompt" id="memo" aria-label="今日のメモ" placeholder="今日の気づきや、持ち帰りたいことを自由に書いてください" style="min-height:12em;margin-top:.4em"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn" id="saveMemo" type="button" hidden>メモをテキストで保存</button>
+        <button class="btn ghost" id="copyAll" type="button">全文を選択してコピー</button>
+        <button class="btn ghost" id="remakeMemo" type="button">入力内容から作り直す</button>
+        <span class="toast" id="toast2" role="status"></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="nav" aria-label="スライド移動">
+  <a class="nb" href="../index.html" style="text-decoration:none">← Home</a>
+  <button class="nb" id="prev" type="button">前へ</button>
+  <span class="pg tnum" id="pg">1 / 14</span>
+  <button class="nb" id="next" type="button">次へ</button>
+</nav>
+
+<script>
+(function(){
+  "use strict";
+  var store = {
+    get: function(k){ try { return localStorage.getItem("aiu1pub:"+k); } catch(e){ return null; } },
+    set: function(k,v){ try { localStorage.setItem("aiu1pub:"+k, v); } catch(e){} }
+  };
+
+  /* ---------- parts & session timer ---------- */
+  var PARTS = [
+    {id:"ice", name:"アイスブレイク", min:5, start:"icebreak", todo:"最近AIで驚いたこと・困ったことを1人1分で共有"},
+    {id:"basic", name:"基礎知識", min:10, start:"unit", todo:"ユニットの4事業とターゲット、生成AIの得意・苦手、成果を上げる人の違い"},
+    {id:"solve", name:"課題解決", min:15, start:"pp-problem", todo:"AIを使いこなせない人の課題と、Prompt Partner の設計・指示のコツ"},
+    {id:"hands", name:"手を動かす", min:20, start:"pp-build", todo:"Gemini の Canvas で Prompt Partner を作り、試して直す"},
+    {id:"reflect", name:"振り返り＆ブレスト", min:10, start:"reflect", todo:"学び・顧客に使えること・次週やりたいことを出す"}
+  ];
+  var track = document.getElementById("track");
+  var ttBody = document.getElementById("ttBody");
+  PARTS.forEach(function(p){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "seg"; b.dataset.part = p.id;
+    b.setAttribute("role","listitem");
+    b.setAttribute("aria-label", p.name + " " + p.min + "分へ移動");
+    b.innerHTML = '<span class="fill"></span><span>' + p.name + ' ' + p.min + '分</span>';
+    b.addEventListener("click", function(){ go(p.start); });
+    track.appendChild(b);
+    var tr = document.createElement("tr");
+    tr.className = "jump"; tr.dataset.part = p.id; tr.tabIndex = 0;
+    tr.innerHTML = '<td class="tnum">' + p.min + '分</td><td><b>' + p.name + '</b></td><td>' + p.todo + '</td>';
+    tr.addEventListener("click", function(){ go(p.start); });
+    tr.addEventListener("keydown", function(e){ if(e.key==="Enter"){ go(p.start); } });
+    ttBody.appendChild(tr);
+  });
+
+  var timer = { part:null, left:0, running:false, iv:null };
+  var clock = document.getElementById("clock");
+  var tStart = document.getElementById("tStart");
+  function fmt(s){ var neg = s<0; s = Math.abs(s); var m = Math.floor(s/60), r = s%60; return (neg?"-":"") + m + ":" + (r<10?"0":"") + r; }
+  function partOf(id){ for(var i=0;i<PARTS.length;i++){ if(PARTS[i].id===id) return PARTS[i]; } return null; }
+  function setPart(pid){
+    if(timer.part === pid) return;
+    stop();
+    timer.part = pid;
+    var p = partOf(pid);
+    timer.left = p ? p.min*60 : 0;
+    renderClock();
+  }
+  function renderClock(){
+    var p = partOf(timer.part);
+    if(!p){ clock.textContent = "60:00"; clock.classList.remove("over"); tStart.disabled = true; tStart.style.opacity=.4; drawFill(); return; }
+    tStart.disabled = false; tStart.style.opacity = 1;
+    clock.textContent = fmt(timer.left);
+    clock.classList.toggle("over", timer.left < 0);
+    tStart.textContent = timer.running ? "一時停止" : "開始";
+    drawFill();
+  }
+  function drawFill(){
+    var idx = -1;
+    PARTS.forEach(function(p,i){ if(p.id===timer.part) idx=i; });
+    Array.prototype.forEach.call(track.children, function(seg,i){
+      seg.classList.toggle("now", i===idx);
+      seg.classList.toggle("done", idx>-1 && i<idx);
+      var f = seg.querySelector(".fill");
+      if(i===idx){ var tot = PARTS[i].min*60; f.style.width = Math.min(100, Math.max(0,(tot - timer.left)/tot*100)) + "%"; }
+      else if(!(idx>-1 && i<idx)){ f.style.width = "0"; }
+      else { f.style.width = ""; }
+    });
+    Array.prototype.forEach.call(ttBody.children, function(tr){ tr.classList.toggle("now", tr.dataset.part===timer.part); });
+  }
+  function start(){ if(timer.running || !timer.part) return; timer.running = true; timer.iv = setInterval(function(){ timer.left--; renderClock(); }, 1000); renderClock(); }
+  function stop(){ timer.running = false; clearInterval(timer.iv); timer.iv = null; renderClock(); }
+  tStart.addEventListener("click", function(){ timer.running ? stop() : start(); });
+  document.getElementById("tReset").addEventListener("click", function(){ stop(); var p = partOf(timer.part); timer.left = p ? p.min*60 : 0; renderClock(); });
+
+  /* ---------- navigation ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var cur = 0;
+  var pg = document.getElementById("pg"), prev = document.getElementById("prev"), next = document.getElementById("next");
+  function show(i){
+    i = Math.max(0, Math.min(slides.length-1, i));
+    slides[cur].classList.remove("on");
+    cur = i;
+    var s = slides[cur];
+    s.classList.add("on");
+    s.scrollTop = 0;
+    pg.textContent = (cur+1) + " / " + slides.length;
+    prev.disabled = cur===0; next.disabled = cur===slides.length-1;
+    var pid = s.dataset.part;
+    if(pid !== "intro") setPart(pid); else if(!timer.running){ timer.part = null; renderClock(); }
+    if(s.id === "closing") buildMemo();
+    if(location.hash !== "#" + s.id){ try { history.replaceState(null, "", "#" + s.id); } catch(e){ location.hash = s.id; } }
+  }
+  function go(id){ for(var i=0;i<slides.length;i++){ if(slides[i].id===id){ show(i); return; } } }
+  window.go = go;
+  prev.addEventListener("click", function(){ show(cur-1); });
+  next.addEventListener("click", function(){ show(cur+1); });
+  document.addEventListener("keydown", function(e){
+    var t = e.target.tagName;
+    if(t==="INPUT" || t==="TEXTAREA") return;
+    if(e.key==="ArrowRight" || e.key==="PageDown"){ e.preventDefault(); show(cur+1); }
+    if(e.key==="ArrowLeft" || e.key==="PageUp"){ e.preventDefault(); show(cur-1); }
+  });
+  document.querySelectorAll("[data-go]").forEach(function(b){ b.addEventListener("click", function(){ go(b.dataset.go); }); });
+  window.addEventListener("hashchange", function(){ var id = location.hash.slice(1); if(id && slides[cur].id !== id) go(id); });
+
+  /* ---------- icebreak roulette ---------- */
+  var names = document.getElementById("names"), who = document.getElementById("who"), mini = document.getElementById("mini");
+  var DEFAULT_NAMES = "";
+  var order = [], pos = -1, miniLeft = 60, miniIv = null;
+  var orderEl = document.getElementById("order");
+  names.value = store.get("names") || DEFAULT_NAMES;
+  function nameList(){ return names.value.split(/\n/).map(function(s){ return s.trim(); }).filter(Boolean); }
+  function shuffle(a){ a = a.slice(); for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function renderOrder(){
+    orderEl.innerHTML = "";
+    order.forEach(function(n, i){ var li = document.createElement("li"); li.textContent = (i+1) + ". " + n; if(i===pos) li.className = "now"; else if(i<pos) li.className = "done"; orderEl.appendChild(li); });
+  }
+  function resetMini(){ clearInterval(miniIv); mini.textContent = "1:00"; }
+  order = nameList(); renderOrder();
+  names.addEventListener("input", function(){ store.set("names", names.value); order = nameList(); pos = -1; who.textContent = "―"; resetMini(); renderOrder(); });
+  function runMini(){ clearInterval(miniIv); miniLeft = 60; mini.textContent = fmt(miniLeft);
+    miniIv = setInterval(function(){ miniLeft--; mini.textContent = fmt(miniLeft); if(miniLeft<=0){ clearInterval(miniIv); mini.textContent = "時間です"; } }, 1000); }
+  document.getElementById("shuffleBtn").addEventListener("click", function(){
+    var l = nameList();
+    if(!l.length){ who.textContent = "名前を入力してください"; return; }
+    order = shuffle(l); pos = -1; who.textContent = "―"; resetMini(); renderOrder();
+  });
+  document.getElementById("pickBtn").addEventListener("click", function(){
+    if(!order.length){ order = nameList(); }
+    if(!order.length){ who.textContent = "名前を入力してください"; return; }
+    pos++;
+    if(pos >= order.length){ pos = order.length; who.textContent = "全員話しました"; resetMini(); renderOrder(); return; }
+    who.textContent = order[pos] + " さん"; runMini(); renderOrder();
+    if(!timer.running) start();
+  });
+  document.getElementById("resetPick").addEventListener("click", function(){ pos = -1; who.textContent = "―"; resetMini(); renderOrder(); });
+
+  /* ---------- tabs ---------- */
+  var tabs = document.querySelectorAll(".tab");
+  tabs.forEach(function(t){ t.addEventListener("click", function(){
+    tabs.forEach(function(x){ x.setAttribute("aria-selected", x===t ? "true" : "false"); document.getElementById(x.getAttribute("aria-controls")).classList.toggle("on", x===t); });
+  }); });
+
+  /* ---------- quiz ---------- */
+  var Q = [
+    {q:"会議の議事録を要約する", a:"good", why:"要約や言い換えは生成AIの得意分野です。"},
+    {q:"来月の資材価格を正確に答える", a:"bad", why:"最新情報や正確な数字は、調べずに答えると誤ることがあります。"},
+    {q:"新サービスのアイデアを20個出す", a:"good", why:"量を出すアイデア出しや壁打ちに向いています。"},
+    {q:"自社の見積基準を決める", a:"bad", why:"社内の事情や暗黙知は、教えない限りAIは知りません。"},
+    {q:"報告書をお客様向けのメール文に書き換える", a:"good", why:"形式や文体の変換は得意です。"},
+    {q:"どの提案を採用するか最終判断する", a:"bad", why:"判断と責任は人が持ちます。AIは材料を出す役です。"}
+  ];
+  var quiz = document.getElementById("quiz"), score = document.getElementById("score"), answers = {};
+  function renderQuiz(){
+    quiz.innerHTML = "";
+    Q.forEach(function(item, i){
+      var row = document.createElement("div"); row.className = "qrow";
+      row.innerHTML = '<span>' + item.q + '</span><span class="qbtns" role="group" aria-label="' + item.q + '"><button type="button" class="qb" data-v="good" aria-pressed="false">得意</button><button type="button" class="qb" data-v="bad" aria-pressed="false">苦手</button></span><span class="qres" role="status"></span>';
+      row.querySelectorAll(".qb").forEach(function(b){ b.addEventListener("click", function(){
+        answers[i] = b.dataset.v;
+        row.querySelectorAll(".qb").forEach(function(x){ x.setAttribute("aria-pressed", x===b ? "true" : "false"); });
+        var res = row.querySelector(".qres"), ok = b.dataset.v === item.a;
+        res.className = "qres " + (ok ? "ok" : "ng");
+        res.textContent = (ok ? "正解：" : "不正解：") + (item.a==="good" ? "得意" : "苦手") + "。" + item.why;
+        updateScore();
+      }); });
+      quiz.appendChild(row);
+    });
+    updateScore();
+  }
+  function updateScore(){ var c = 0; Q.forEach(function(item,i){ if(answers[i]===item.a) c++; }); score.textContent = c + " / " + Q.length + " 問正解"; }
+  document.getElementById("quizReset").addEventListener("click", function(){ answers = {}; renderQuiz(); });
+  renderQuiz();
+
+  /* ---------- saved fields ---------- */
+  document.querySelectorAll("[data-save]").forEach(function(el){
+    var k = el.dataset.save; el.value = store.get(k) || "";
+    el.addEventListener("input", function(){ store.set(k, el.value); });
+  });
+
+  /* ---------- copy helpers ---------- */
+  function val(id){ return document.getElementById(id).value.trim(); }
+  function copyFrom(el, toastId, okMsg){
+    var t = document.getElementById(toastId);
+    var manual = "選択済みです。Ctrl+C（Macは⌘+C）でコピーしてください";
+    function say(m){ t.textContent = m; clearTimeout(t._h); t._h = setTimeout(function(){ t.textContent = ""; }, 5000); }
+    el.focus(); el.select(); try { el.setSelectionRange(0, el.value.length); } catch(e){}
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch(e){ ok = false; }
+    if(ok){ say(okMsg); return; }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(el.value).then(function(){ say(okMsg); }, function(){ el.select(); say(manual); });
+    } else { say(manual); }
+  }
+  var samplePrompt = document.getElementById("samplePrompt"), SAMPLE = samplePrompt.value;
+  document.getElementById("copySample").addEventListener("click", function(){ copyFrom(samplePrompt, "toast1", "コピーしました。Gemini の Canvas に貼り付けてください"); });
+  document.getElementById("resetSample").addEventListener("click", function(){ samplePrompt.value = SAMPLE; });
+  var chipBuf = document.getElementById("chipBuf");
+  document.querySelectorAll(".chipcopy").forEach(function(b){ b.addEventListener("click", function(){
+    chipBuf.value = b.dataset.text; copyFrom(chipBuf, "toast3", "コピーしました。Canvas の入力欄に貼って送ってください"); b.focus();
+  }); });
+  var memoEl = document.getElementById("memo");
+  var memoEdited = store.get("memoEdited") === "1";
+  if(memoEdited){ memoEl.value = store.get("memo") || ""; }
+  memoEl.addEventListener("input", function(){ memoEdited = true; store.set("memoEdited", "1"); store.set("memo", memoEl.value); });
+  function buildMemo(force){
+    if(memoEdited && force !== true) return memoEl.value;
+    var out = [
+      "■ AI Deep Dive 第1回 メモ（AX教育ユニット-AX Enablement Team-）",
+      "作ったアプリ：Prompt Partner（Gemini Canvas）",
+      "今日の学び：" + (val("r1") || "―"),
+      "顧客に使えること：" + (val("r2") || "―"),
+      "次週やりたいこと：" + (val("r3") || "―"),
+      "半年後のゴール：半年後、私は経営者の前で" + (val("goalText") || "＿＿＿＿") + "ができるようになっている。"
+    ].join("\n");
+    memoEl.value = out;
+    return out;
+  }
+  document.getElementById("copyAll").addEventListener("click", function(){
+    buildMemo();
+    copyFrom(memoEl, "toast2", "コピーしました");
+  });
+  document.getElementById("remakeMemo").addEventListener("click", function(){
+    memoEdited = false; store.set("memoEdited", "0"); store.set("memo", "");
+    buildMemo(true);
+  });
+  document.getElementById("goalText").addEventListener("input", function(){ buildMemo(); });
+  (function(){
+    var btn = document.getElementById("saveMemo"), t = document.getElementById("toast2");
+    if(!(window.claude && window.claude.use)) return;
+    window.claude.use("downloads").then(function(dl){
+      if(!dl) return;
+      btn.hidden = false;
+      btn.addEventListener("click", function(){
+        var text = buildMemo();
+        dl.save({ filename: "AI_Deep_Dive_第1回メモ.txt", data: text }).then(function(){
+          t.textContent = "保存しました";
+        }, function(err){
+          t.textContent = (err && err.code === "declined") ? "保存をキャンセルしました" : "この画面では保存できません。全文を選択してコピーしてください";
+          if(err && err.code !== "declined" && err.code !== "rate_limited") btn.hidden = true;
+        });
+      });
+    }, function(){});
+  })();
+
+  /* ---------- start ---------- */
+  var startId = location.hash.slice(1);
+  slides[0].classList.add("on");
+  renderClock();
+  if(startId) go(startId); else show(0);
+})();
+</script>
+</body>
+</html>
