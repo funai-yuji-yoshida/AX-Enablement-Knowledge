@@ -19,7 +19,7 @@ AX教育ユニット-AX Enablement Team- の知識HTMLを公開する場所で�
 
 | フォルダ | 内容 |
 |---|---|
-| `lectures/` | 講義資料（講座で使うスライド） |
+| `lectures/` | AI Deep Dive の講義資料 |
 | `basics/` | AIの仕組み・用語・安全な使い方 |
 | `prompting/` | AIへの問いかけ方 |
 | `tools/` | ツール・サービスの使い方 |
